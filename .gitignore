@@ -14,6 +14,12 @@ node_modules/
 *.p12
 *.key
 *.pem
+# Evidencia clínica: imágenes de exámenes, firmas y consentimientos.
+data/historias/
+data/firmas/
+data/firmas-medicos/
+data/consentimientos/
+data/fotos/
 data/
 old_db.sql
 
