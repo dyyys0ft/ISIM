@@ -1,0 +1,37 @@
+SISTEMA MÉDICO ISIM — Instituto de Salud Integral de la Mujer
+==============================================================
+
+INSTALACIÓN (una sola vez, en la computadora que hará de "servidor", p. ej. la del consultorio)
+1. Instale Python 3 desde https://www.python.org/downloads/
+   IMPORTANTE: en la primera pantalla marque "Add Python to PATH".
+2. Descomprima esta carpeta en un lugar fijo, por ejemplo  C:\ISIM
+3. Doble clic en INICIAR_ISIM.bat
+   Se abre una ventana negra (NO la cierre) y el navegador con el sistema.
+4. La primera vez le pide crear el usuario ADMINISTRADOR (su usuario de médico).
+   Ponga su registro profesional (Senescyt/ACESS): sale en recetas y pedidos.
+5. En Ajustes > Usuarios cree el usuario de RECEPCIÓN.
+
+USO DESDE OTRAS COMPUTADORAS (recepción, otro consultorio)
+- La ventana negra muestra una dirección tipo  http://192.168.1.20:8080
+- En las otras computadoras de la misma red (wifi/cable del instituto) abra esa dirección en Chrome.
+- Si Windows pregunta por el firewall, elija "Permitir" en redes privadas.
+- Conviene fijar la IP del servidor en el router para que la dirección no cambie.
+
+IMPRESIÓN
+- Receta: hoja A5 horizontal. Pedidos: A5 vertical. Consulta: A4.
+- En el cuadro de impresión de Chrome: Márgenes "Ninguno" y activar "Gráficos de fondo".
+  También puede elegir "Guardar como PDF".
+
+RESPALDOS (muy importante)
+- Ajustes > Respaldo > "Descargar respaldo ahora" (una vez por semana mínimo).
+- Toda la información vive en la carpeta  data\  (base isim.db + archivos de exámenes).
+  Nunca borre esa carpeta. Para mudar el sistema a otra PC, copie la carpeta completa.
+
+QUÉ CUBRE DE LA NORMATIVA
+- Admisión con datos del Formulario 001 y consulta externa con la estructura del Formulario 002 (HCU MSP).
+- Historia clínica: la consulta firmada no se puede editar; las correcciones van como nota aclaratoria
+  con fecha, hora y usuario (Reglamento de manejo de la HCU, AM 00115-2021).
+- Receta: genérico (DCI) + comercial, concentración, forma y vía, cantidad en número y letras,
+  indicaciones, diagnóstico CIE-10, alergias, firma, sello y registro profesional (AM 00031-2020).
+- Confidencialidad: usuarios con contraseña, recepción sin acceso a datos clínicos, registro de quién
+  abrió o modificó cada historia (AM 5216), consentimiento de tratamiento de datos (LOPDP).

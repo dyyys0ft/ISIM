@@ -1,0 +1,66 @@
+HTTPS LOCAL Y CERTIFICADO EN EL CELULAR (OPCIONAL)
+========================================================
+
+NOTA: Por defecto el QR usa HTTP en el celular para no instalar nada.
+Esta guia es solo si aceptas instalar la CA local en el telefono y quieres
+que el QR use HTTPS. Para activarlo, inicia el servidor con QR_HTTPS=1.
+
+HTTPS LOCAL Y CERTIFICADO EN EL CELULAR
+=======================================
+
+El sistema ahora funciona por HTTPS en el puerto 3443:
+  PC:     https://127.0.0.1:3443
+  Celular: https://IP-DEL-EQUIPO:3443
+
+El HTTP del puerto 3000 se mantiene como respaldo para descargar el certificado.
+
+PASO 1: GENERAR EL CERTIFICADO (solo una vez)
+---------------------------------------------
+1. Abre la carpeta del sistema.
+2. Ejecuta GENERAR_CERTIFICADO_HTTPS.bat
+3. Espera el mensaje "Certificado generado correctamente".
+4. El script instala la CA en Windows para que Chrome/Edge no adviertan.
+
+Si cambia la IP del equipo, vuelve a ejecutar ese .bat.
+
+PASO 2: INSTALAR EL CERTIFICADO EN EL CELULAR
+---------------------------------------------
+Antes de escanear el QR por primera vez:
+
+1. Conecta el celular a la misma Wi-Fi que la computadora.
+2. Abre en el navegador del celular (Chrome recomendado):
+   http://IP-DEL-EQUIPO:3000/isim-ca.crt
+   Ejemplo: http://192.168.100.140:3000/isim-ca.crt
+   Si el celular no reconoce el .crt, usa: http://192.168.100.140:3000/isim-ca.cer
+3. Descarga el archivo.
+
+ANDROID
+-------
+- Ajustes > Seguridad > Cifrado y credenciales > Instalar un certificado
+  > Certificado de CA > Instalar de todos modos > elige isim-ca.crt
+- Los nombres pueden variar segun la marca:
+  Ajustes > Seguridad > Mas ajustes de seguridad > Cifrado y credenciales
+- Despues de instalarlo, Chrome confiara en el HTTPS del sistema.
+
+IPHONE / IPAD
+-------------
+1. Abre el enlace en Safari y permite descargar el perfil.
+2. Ajustes > General > VPN y gestion de dispositivos > instala el perfil.
+3. Ajustes > General > Informacion > Ajustes de confianza de certificados
+   > activa la confianza total para "ISIM CA Local".
+4. Vuelve a abrir el QR en Safari o Chrome.
+
+PASO 3: USAR EL QR
+------------------
+- El QR ahora contiene una direccion https://IP:3443/...
+- Si el celular ya confia en la CA, no aparece ninguna advertencia.
+- Si aparece una advertencia, el certificado no se instalo correctamente
+  o la IP del QR no coincide con la del certificado.
+
+IMPORTANTE
+----------
+- El certificado es local y privado. Instalalo solo en dispositivos de confianza.
+- Si el router cambia la IP del equipo, vuelve a ejecutar
+  GENERAR_CERTIFICADO_HTTPS.bat.
+- No compartas el archivo data\sistema\https\server.pfx.
+- Para respaldar, copia la carpeta data completa con el sistema detenido.

@@ -1,0 +1,308 @@
+/* Ficha unificada de paciente (UI v2). Complementa isim.css. */
+
+.ficha-main {
+  padding-top: 14px;
+}
+
+.ficha-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ficha-bar__titulo {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.ficha-panel {
+  padding-top: 16px;
+  min-height: 220px;
+}
+
+/* Historial a la izquierda, alta/edición a la derecha. */
+.ficha-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.9fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.ficha-split__main,
+.ficha-split__side {
+  min-width: 0;
+}
+
+.ficha-split__side > .card,
+.ficha-split__side > .sec {
+  position: sticky;
+  top: calc(var(--header-h) + 12px);
+}
+
+@media (max-width: 1050px) {
+  .ficha-split {
+    grid-template-columns: 1fr;
+  }
+
+  .ficha-split__side > .card,
+  .ficha-split__side > .sec {
+    position: static;
+  }
+}
+
+/* El encabezado del final lleva el nombre a la izquierda y los datos de la
+   cita a la derecha; en móvil todo pasa a una sola columna. */
+.phead {
+  flex-wrap: wrap;
+}
+
+.phead__turno {
+  text-align: right;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.phead__turno b {
+  color: var(--navy);
+}
+
+.phead__menor {
+  color: var(--amber);
+  font-weight: 500;
+}
+
+/* Las pestañas pueden desplazarse horizontalmente sin romper el layout. */
+#tabs-ficha {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+#tabs-ficha button {
+  font: inherit;
+  cursor: pointer;
+  background: transparent;
+}
+
+#tabs-ficha button:hover:not(.on) {
+  color: var(--navy);
+  background: var(--blue-soft);
+}
+
+/* Aviso de firmas pendientes dentro de la pestaña Consulta. */
+.ficha-warn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: var(--red-soft);
+  border: 1px solid #f3c2bd;
+  color: var(--red);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+
+.ficha-warn a {
+  color: var(--red);
+  font-weight: 600;
+}
+
+.ficha-bloqueo {
+  border-left: 4px solid var(--green);
+  background: var(--green-soft);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+.ficha-addenda {
+  border-left: 3px solid var(--amber);
+  background: var(--amber-soft);
+  border-radius: 0 var(--r) var(--r) 0;
+  padding: 10px 12px;
+  margin-top: 8px;
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+
+.ficha-addenda b {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.evidencia-consentimiento {
+  margin-top: 12px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r);
+  padding: 12px;
+  background: #fafbfd;
+}
+
+.evidencia-consentimiento .row {
+  flex-wrap: wrap;
+}
+
+.evidencia-consentimiento p {
+  margin: 8px 0 0;
+}
+
+/* El resumen de la historia usa definiciones compactas. */
+.ficha-resumen {
+  margin-bottom: 14px;
+}
+
+.ficha-resumen .kv {
+  margin-top: 8px;
+}
+
+.subtabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin-bottom: 12px;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+
+.subtabs .st {
+  flex: 0 0 auto;
+  min-width: 132px;
+  max-width: 190px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+}
+
+.subtabs .st b {
+  color: var(--navy);
+  font-size: 12px;
+}
+
+.subtabs .st span {
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 165px;
+}
+
+.subtabs .st.on {
+  border-color: var(--green);
+  background: var(--green-soft);
+}
+
+.subtabs .st small {
+  font-size: 10px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 165px;
+}
+
+.tbl tr.fila-activa td {
+  background: var(--green-soft);
+}
+
+.tbl tr[data-historia]:hover td {
+  background: #f2f6fc;
+}
+
+.dx-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  background: var(--blue-soft);
+  border: 1px solid #cad7ec;
+  border-radius: 20px;
+  padding: 4px 8px;
+  margin: 0 6px 6px 0;
+  font-size: 12px;
+}
+
+.dx-chip b {
+  color: var(--navy);
+}
+
+.dx-chip select {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+  padding: 1px 3px;
+  font: inherit;
+  font-size: 11px;
+}
+
+.dx-nuevo {
+  display: grid;
+  grid-template-columns: 96px 1fr 76px auto;
+  gap: 6px;
+  align-items: end;
+  margin-bottom: 8px;
+}
+
+.dx-nuevo label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Aviso visible de errores de validación del formulario. */
+.error-formulario {
+  border: 1px solid #f3c2bd;
+  background: var(--red-soft);
+  color: var(--red);
+  border-radius: var(--r);
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+
+.campo-invalido,
+.field--invalido .input,
+.field--invalido .select,
+.field--invalido .textarea {
+  border-color: var(--red) !important;
+  background: var(--red-soft);
+}
+
+@media (max-width: 700px) {
+  .phead {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .phead__turno {
+    text-align: left;
+    width: 100%;
+  }
+
+  #tabs-ficha button {
+    padding: 10px 11px;
+    font-size: 12px;
+  }
+
+  .dx-nuevo {
+    grid-template-columns: 1fr 1fr;
+  }
+}

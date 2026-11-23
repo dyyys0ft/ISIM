@@ -1,0 +1,1232 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#003f93" />
+    <title>ISIM · Ajustes del sistema</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+
+    <link rel="stylesheet" href="/css/isim.css" />
+  </head>
+  <body>
+    <header class="app-header no-print">
+      <div class="app-header__inner container">
+        <a class="brand" href="/agenda.html">
+          <span class="brand__mark" aria-hidden="true">ISIM</span>
+          <span class="brand__text">
+            <strong>ISIM</strong>
+            <small>Salud Integral de la Mujer</small>
+          </span>
+        </a>
+        <button
+          class="nav-toggle"
+          type="button"
+          data-nav-toggle
+          aria-label="Abrir menú"
+          aria-expanded="false"
+        >
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="app-nav" aria-label="Principal">
+          <a href="/dashboard-citas.html" data-nav="dashboard-citas" data-permiso="agenda.ver" hidden>Dashboard</a>
+          <a href="/agenda.html" data-nav="agenda" data-permiso="agenda.ver" hidden>Agenda</a>
+          <a href="/crm.html" data-nav="crm" data-permiso="crm.ver" hidden>CRM</a>
+          <a href="/pacientes.html" data-nav="pacientes">Pacientes</a>
+          <a href="/historias.html" data-nav="historias" data-permiso="historias.ver" hidden>Historias</a>
+          <details class="nav-group">
+            <summary class="nav-group__summary">Documentos</summary>
+            <div class="nav-group__panel">
+              <a href="/documentos.html" data-nav="documentos">Consentimientos</a>
+              <a href="/plantillas.html" data-nav="plantillas" data-permiso="plantillas.gestionar" hidden>Plantillas</a>
+              <a href="/registro.html" data-nav="registro">Historial</a>
+              <a href="/dashboard.html" data-nav="dashboard" data-permiso="dashboard.ver" hidden>Estadísticas consentimientos</a>
+            </div>
+          </details>
+          <details class="nav-group">
+            <summary class="nav-group__summary">Ajustes del sistema</summary>
+            <div class="nav-group__panel">
+              <a href="/ajustes.html" data-nav="ajustes" data-permiso="configuracion.ver" hidden>Configuración del sistema</a>
+              <a href="/usuarios.html" data-nav="usuarios" data-permiso="usuarios.gestionar" hidden>Usuarios</a>
+              <a href="/reportes.html" data-nav="reportes" data-permiso="reportes.ver" hidden>Reportes de usuarios</a>
+              <a href="/cuenta.html" data-nav="cuenta">Mi cuenta</a>
+            </div>
+          </details>
+        </nav>
+        <div class="user-chip">
+          <span class="avatar" data-user-avatar aria-hidden="true">··</span>
+          <span class="user-chip__name" data-user-name>Cargando…</span>
+          <button class="btn btn--ghost btn--sm" data-logout type="button">Salir</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="page container">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Ajustes del sistema</h1>
+          <p class="page-sub">Datos del centro médico, encabezado, pie de página y configuración de la aplicación</p>
+        </div>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Secciones de ajustes">
+        <button class="tab is-active" type="button" data-tab="encabezado" role="tab" aria-selected="true">
+          Centro médico
+        </button>
+        <button class="tab" type="button" data-tab="pie" role="tab" aria-selected="false">
+          Pie de página
+        </button>
+        <button class="tab" type="button" data-tab="consentimiento" role="tab" aria-selected="false">
+          Consentimientos
+        </button>
+        <button class="tab" type="button" data-tab="alertas" role="tab" aria-selected="false">
+          Alertas
+        </button>
+        <button class="tab" type="button" data-tab="agenda" role="tab" aria-selected="false">
+          Agenda
+        </button>
+        <button class="tab" type="button" data-tab="red" role="tab" aria-selected="false">
+          Red / Acceso
+        </button>
+        <button class="tab" type="button" data-tab="respaldos" role="tab" aria-selected="false">
+          Respaldos
+        </button>
+        <button class="tab" type="button" data-tab="roles" role="tab" aria-selected="false">
+          Tipos de acceso
+        </button>
+        <button class="tab" type="button" data-tab="whatsapp" role="tab" aria-selected="false">
+          WhatsApp
+        </button>
+        <button class="tab" type="button" data-tab="demo" role="tab" aria-selected="false">
+          DEMO
+        </button>
+        <button class="tab" type="button" data-tab="migracion" role="tab" aria-selected="false">
+          Migración
+        </button>
+        <button class="tab" type="button" data-tab="actualizaciones" role="tab" aria-selected="false">
+          Actualizaciones
+        </button>
+        <button class="tab" type="button" data-tab="info" role="tab" aria-selected="false">
+          Información
+        </button>
+      </div>
+
+      <section id="panel-encabezado" role="tabpanel">
+        <div class="settings-grid">
+          <section class="card">
+            <div class="card__body stack">
+              <div>
+                <h2 class="side-title">Datos del centro médico</h2>
+                <p class="hint">
+                  Nombre y dirección de la institución. Se usan en las plantillas mediante
+                  <code>{{institucion}}</code> y <code>{{centro.direccion}}</code>, y en el
+                  encabezado de los documentos cuando no hay un logo configurado.
+                </p>
+              </div>
+
+              <div class="field">
+                <label for="centro-nombre">Nombre del centro *</label>
+                <input class="input" id="centro-nombre" maxlength="200" />
+              </div>
+
+              <div class="field">
+                <label for="centro-direccion">Dirección</label>
+                <input class="input" id="centro-direccion" maxlength="300" />
+              </div>
+
+              <div class="form-grid">
+                <div class="field">
+                  <label for="centro-ruc">RUC</label>
+                  <input class="input" id="centro-ruc" maxlength="30" />
+                </div>
+                <div class="field">
+                  <label for="centro-telefono">Teléfono / citas</label>
+                  <input class="input" id="centro-telefono" maxlength="30" />
+                </div>
+              </div>
+
+              <div class="row">
+                <button class="btn btn--primary" id="btn-guardar-centro" type="button">
+                  Guardar datos
+                </button>
+              </div>
+
+              <p class="hint" id="aviso-sin-permiso-centro" hidden>
+                Tu rol puede consultar esta configuración, pero no cambiarla.
+              </p>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card__body stack">
+              <div>
+                <h2 class="side-title">Logo del encabezado</h2>
+                <p class="hint">
+                  Imagen PNG que aparece siempre en la parte superior de los documentos y de la
+                  pantalla de firma.
+                </p>
+              </div>
+
+              <div class="logo-preview" id="logo-preview">
+                <p class="muted small">Sin logo configurado.</p>
+              </div>
+
+              <div id="zona-carga" hidden>
+                <div class="field">
+                  <label for="archivo-logo">Seleccionar imagen PNG</label>
+                  <input class="input" id="archivo-logo" type="file" accept="image/png" />
+                </div>
+                <div class="row" style="margin-top: 0.8rem">
+                  <button class="btn btn--primary" id="btn-guardar-logo" type="button" disabled>
+                    Guardar logo
+                  </button>
+                  <button class="btn btn--danger" id="btn-quitar-logo" type="button" hidden>
+                    Quitar logo
+                  </button>
+                </div>
+                <p class="hint">Máximo 2 MB. Se recomienda un PNG horizontal (por ejemplo 1200 × 300 px).</p>
+              </div>
+
+              <p class="hint" id="aviso-sin-permiso" hidden>
+                Tu rol puede consultar esta configuración, pero no cambiarla.
+              </p>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card__body stack">
+              <h2 class="side-title">Vista previa del encabezado</h2>
+              <div class="hoja" style="max-width: none">
+                <div class="doc-encabezado" id="vista-previa-encabezado" hidden>
+                  <img src="" alt="Vista previa del encabezado" />
+                </div>
+                <div class="doc-centro">
+                  <strong id="centro-preview-nombre">ISIM-Instituto de la Salud Integral de la Mujer</strong>
+                  <span id="centro-preview-direccion"></span>
+                </div>
+                <h2>CONSENTIMIENTO INFORMADO</h2>
+                <p>
+                  El logo y los datos del centro se mostrarán en la parte superior de los
+                  documentos y en la pantalla donde firma la paciente.
+                </p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="panel-pie" role="tabpanel" hidden>
+        <div class="settings-grid">
+          <section class="card">
+            <div class="card__body stack">
+              <div>
+                <h2 class="side-title">Texto del pie de página</h2>
+                <p class="hint">
+                  Texto que aparece siempre al final de los documentos y de la pantalla de firma.
+                  Puedes incluir la dirección, teléfono, correo o el nombre de la institución.
+                </p>
+              </div>
+
+              <div class="field">
+                <label for="pie-texto">Texto del pie de página</label>
+                <textarea
+                  class="textarea"
+                  id="pie-texto"
+                  maxlength="1200"
+                  rows="4"
+                  placeholder="ISIM · Instituto de la Salud Integral de la Mujer&#10;Dirección · Teléfono · Correo"
+                ></textarea>
+                <p class="hint" id="pie-contador">0 / 1200 caracteres</p>
+              </div>
+
+              <div class="row" style="margin-top: 0.8rem">
+                <button class="btn btn--primary" id="btn-guardar-pie" type="button">
+                  Guardar pie de página
+                </button>
+                <button class="btn btn--danger" id="btn-quitar-pie" type="button" hidden>
+                  Quitar pie de página
+                </button>
+              </div>
+
+              <p class="hint" id="aviso-sin-permiso-pie" hidden>
+                Tu rol puede consultar esta configuración, pero no cambiarla.
+              </p>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card__body stack">
+              <h2 class="side-title">Cómo se verá</h2>
+              <div class="hoja" style="max-width: none">
+                <h2>CONSENTIMIENTO INFORMADO</h2>
+                <p class="doc-meta">ISIM-Instituto de la Salud Integral de la Mujer</p>
+                <p>
+                  El pie de página se mostrará al final de cada documento y en la pantalla donde
+                  firma la paciente.
+                </p>
+                <footer class="doc-pie">
+                  <p class="doc-pie__texto" id="pie-demo-texto">Sin pie de página configurado.</p>
+                </footer>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="panel-consentimiento" role="tabpanel" hidden>
+        <div class="settings-grid">
+          <section class="card">
+            <div class="card__body stack">
+              <div>
+                <h2 class="side-title">Textos del consentimiento informado</h2>
+                <p class="hint">
+                  Se insertan en la plantilla ISIM (Form. 024). Puedes usar
+                  <code>{{paciente.nombre_completo}}</code>, <code>{{paciente.cedula}}</code>,
+                  <code>{{institucion}}</code>, <code>{{fecha}}</code> y <code>{{hora}}</code>.
+                </p>
+              </div>
+
+              <div class="field">
+                <label for="consent-declaracion">Declaración de consentimiento</label>
+                <textarea
+                  class="textarea"
+                  id="consent-declaracion"
+                  maxlength="2000"
+                  rows="5"
+                ></textarea>
+                <p class="hint">Párrafo que la paciente acepta al firmar el consentimiento.</p>
+              </div>
+
+              <div class="field">
+                <label for="consent-negativa">Texto de negativa</label>
+                <textarea
+                  class="textarea"
+                  id="consent-negativa"
+                  maxlength="1500"
+                  rows="3"
+                ></textarea>
+                <p class="hint">Se muestra cuando la paciente o su representante rechaza el procedimiento.</p>
+              </div>
+
+              <div class="field">
+                <label for="consent-revocatoria">Texto de revocatoria</label>
+                <textarea
+                  class="textarea"
+                  id="consent-revocatoria"
+                  maxlength="1500"
+                  rows="3"
+                ></textarea>
+                <p class="hint">Se muestra cuando se revoca un consentimiento ya firmado.</p>
+              </div>
+
+              <div class="row" style="margin-top: 0.8rem">
+                <button class="btn btn--primary" id="btn-guardar-consentimiento" type="button">
+                  Guardar textos
+                </button>
+                <button class="btn" id="btn-restaurar-consentimiento" type="button" hidden>
+                  Restaurar textos por defecto
+                </button>
+              </div>
+
+              <p class="hint" id="aviso-sin-permiso-consentimiento" hidden>
+                Tu rol puede consultar esta configuración, pero no cambiarla.
+              </p>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card__body stack">
+              <h2 class="side-title">Vista previa</h2>
+              <div class="hoja" style="max-width: none">
+                <h2>DECLARACIÓN DE CONSENTIMIENTO INFORMADO</h2>
+                <p id="consent-preview-declaracion"></p>
+                <hr />
+                <h3>NEGATIVA DEL CONSENTIMIENTO INFORMADO</h3>
+                <p id="consent-preview-negativa"></p>
+                <h3>REVOCATORIA DEL CONSENTIMIENTO INFORMADO</h3>
+                <p id="consent-preview-revocatoria"></p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="panel-alertas" role="tabpanel" hidden>
+        <div class="settings-grid">
+          <section class="card">
+            <div class="card__body stack">
+              <div>
+                <h2 class="side-title">Alertas de exámenes</h2>
+                <p class="hint">
+                  Controla si se muestra una alerta en las historias clínicas cuando existen
+                  exámenes solicitados sin resultado subido.
+                </p>
+              </div>
+
+              <label class="consent">
+                <input type="checkbox" id="alerta-examenes" />
+                <span>Mostrar alerta de exámenes solicitados sin subir</span>
+              </label>
+
+              <div class="row">
+                <button class="btn btn--primary" id="btn-guardar-alertas" type="button">
+                  Guardar alertas
+                </button>
+              </div>
+
+              <p class="hint" id="aviso-sin-permiso-alertas" hidden>
+                Tu rol puede consultar esta configuración, pero no cambiarla.
+              </p>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card__body stack">
+              <h2 class="side-title">Cómo funciona</h2>
+              <p class="muted small">
+                La alerta aparece al inicio de la historia del paciente y en la consulta cuando
+                hay exámenes con estado “Solicitado” y sin archivo de resultado.
+              </p>
+              <p class="muted small">
+                Al subir el resultado, el examen pasa a “Recibido” y deja de contar para la
+                alerta.
+              </p>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="panel-agenda" role="tabpanel" hidden>
+        <div class="settings-grid">
+          <section class="card">
+            <div class="card__body stack">
+              <div>
+                <h2 class="side-title">Visitas simultáneas</h2>
+                <p class="hint">
+                  Controla si el sistema permite que un médico tenga varias citas en el mismo
+                  horario o si bloquea las visitas simultáneas.
+                </p>
+              </div>
+
+              <label class="consent">
+                <input type="checkbox" id="permitir-citas-simultaneas" />
+                <span>Permitir visitas simultáneas (citas al mismo horario)</span>
+              </label>
+
+              <p class="hint">
+                Si está desactivado, el sistema impedirá agendar dos citas para el mismo médico
+                a la misma hora. Si está activado, permitirá varias visitas simultáneas.
+              </p>
+
+              <label class="f">
+                <span>Vista inicial de la agenda</span>
+                <select class="select" id="vista-agenda-defecto">
+                  <option value="jornada">Jornada (recomendada)</option>
+                  <option value="lista">Lista</option>
+                  <option value="calendario">Calendario</option>
+                </select>
+              </label>
+              <p class="hint">
+                La agenda abrirá en esta vista. Los botones Lista, Jornada y Calendario
+                seguirán disponibles para cambiar en cualquier momento.
+              </p>
+
+              <div class="row">
+                <button class="btn btn--primary" id="btn-guardar-agenda" type="button">
+                  Guardar configuración de agenda
+                </button>
+              </div>
+
+              <p class="hint" id="aviso-sin-permiso-agenda" hidden>
+                Tu rol puede consultar esta configuración, pero no cambiarla.
+              </p>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card__body stack">
+              <h2 class="side-title">Cómo funciona</h2>
+              <p class="muted small">
+                La validación se aplica al crear o editar una cita. Si las visitas simultáneas
+                están bloqueadas, una segunda cita en el mismo horario y con el mismo médico
+                será rechazada con un mensaje.
+              </p>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="panel-red" role="tabpanel" hidden>
+        <div class="settings-grid">
+          <section class="card">
+            <div class="card__body stack">
+              <div>
+                <h2 class="side-title">Dirección de acceso</h2>
+                <p class="hint">
+                  Este es el enlace que deben usar las tablets y computadoras de la intranet.
+                  Se actualiza automáticamente al cambiar el puerto.
+                </p>
+              </div>
+
+              <p class="hint" style="word-break: break-all">
+                <code id="red-url-acceso">—</code>
+              </p>
+
+              <div class="field">
+                <label>IP del servidor</label>
+                <input class="input" id="red-ip-local" value="—" readonly />
+              </div>
+
+              <div class="field">
+                <label>Direcciones actuales del equipo</label>
+                <div class="stack" id="lista-direcciones"></div>
+              </div>
+              <div class="field">
+                <label>Acceso local (en este equipo)</label>
+                <input class="input" id="red-url-local" value="—" readonly />
+              </div>
+              <div class="field">
+                <label>Acceso HTTPS (si el certificado está activo)</label>
+                <input class="input" id="red-url-https" value="—" readonly />
+              </div>
+
+              <p class="muted small" id="red-detalle-puertos">—</p>
+              <p class="muted small" id="red-estado-proxy">—</p>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card__body stack">
+              <div>
+                <h2 class="side-title">Puerto de acceso</h2>
+                <p class="hint">
+                  Elige uno de los puertos disponibles o escribe uno propio. El cambio se aplica
+                  al instante, sin reiniciar el sistema.
+                </p>
+              </div>
+
+              <div class="field">
+                <label for="red-puerto">Puertos disponibles</label>
+                <select class="input" id="red-puerto"></select>
+              </div>
+
+              <div class="field">
+                <label for="red-puerto-custom">Otro puerto (1 – 65535)</label>
+                <input class="input" id="red-puerto-custom" type="number" min="1" max="65535" placeholder="Ej.: 8080" />
+              </div>
+
+              <div class="row">
+                <button class="btn btn--primary" id="btn-guardar-puerto" type="button">
+                  Aplicar puerto
+                </button>
+              </div>
+
+              <p class="hint" id="red-puerto-error" hidden></p>
+              <p class="hint" id="aviso-sin-permiso-red-puerto" hidden>
+                Tu rol puede consultar esta configuración, pero no cambiarla.
+              </p>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card__body stack">
+              <div>
+                <h2 class="side-title">IPs permitidas</h2>
+                <p class="hint">
+                  Solo estas direcciones podrán conectarse. Las conexiones desde el propio equipo
+                  (127.0.0.1) siempre siguen permitidas para administrar el sistema. Si una entrada
+                  tiene MAC registrada, el acceso exige esa combinación <strong>IP + MAC</strong>.
+                </p>
+              </div>
+
+              <label class="consent">
+                <input type="checkbox" id="red-restriccion" />
+                <span>Restringir el acceso solo a las IPs de la lista</span>
+              </label>
+
+              <label class="consent">
+                <input type="checkbox" id="red-confiar-proxy" />
+                <span>Confiar en X-Forwarded-For (solo si hay un proxy en la intranet)</span>
+              </label>
+
+              <div class="row">
+                <button class="btn btn--primary" id="btn-guardar-restriccion" type="button">
+                  Guardar restricción
+                </button>
+                <button class="btn" id="btn-ping-todos" type="button">
+                  Verificar todas en red
+                </button>
+              </div>
+
+              <p class="hint" id="red-ips-vacio" hidden>
+                La lista está vacía. Si activas la restricción, nadie más que este equipo podrá
+                ingresar hasta que agregues una IP.
+              </p>
+              <p class="hint" id="aviso-sin-permiso-red" hidden>
+                Tu rol puede consultar esta configuración, pero no cambiarla.
+              </p>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card__body stack">
+              <h2 class="side-title">Agregar IP o rango</h2>
+              <p class="hint">
+                Ejemplos: <code>192.168.1.25</code> o <code>192.168.1.0/24</code> para toda la red.
+                Si registras la MAC, el acceso exige la combinación <strong>IP + MAC</strong>.
+              </p>
+
+              <form id="form-ip" class="stack">
+                <div class="field">
+                  <label for="red-ip">IP o rango CIDR</label>
+                  <input class="input" id="red-ip" maxlength="60" placeholder="192.168.1.25" />
+                </div>
+                <div class="field">
+                  <label for="red-mac">MAC del equipo (opcional)</label>
+                  <div class="row">
+                    <input class="input" id="red-mac" maxlength="17" placeholder="AA:BB:CC:DD:EE:FF" />
+                    <button class="btn" id="btn-detectar-mac" type="button">Detectar MAC</button>
+                  </div>
+                  <p class="hint" id="red-mac-aviso">
+                    Déjala vacía para autorizar solo por IP. La detección funciona para equipos de la
+                    misma red.
+                  </p>
+                </div>
+                <div class="field">
+                  <label for="red-ip-descripcion">Descripción (opcional)</label>
+                  <input class="input" id="red-ip-descripcion" maxlength="200" placeholder="Recepción" />
+                </div>
+                <div class="row">
+                  <button class="btn btn--primary" type="submit">Agregar a la lista</button>
+                </div>
+              </form>
+
+              <div id="lista-ips" class="stack"></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="panel-respaldos" role="tabpanel" hidden>
+        <div class="settings-grid">
+          <section class="card">
+            <div class="card__body stack">
+              <div>
+                <h2 class="side-title">Estado de los respaldos</h2>
+                <p class="hint">
+                  Copia cifrada de la base de datos y de las carpetas que selecciones.
+                  Sin la clave de respaldos no se pueden abrir.
+                </p>
+              </div>
+
+              <div class="detalle-cita__grid">
+                <div>
+                  <span>Último respaldo</span>
+                  <strong id="respaldos-ultimo">—</strong>
+                </div>
+                <div>
+                  <span>Próximo respaldo</span>
+                  <strong id="respaldos-proximo">—</strong>
+                </div>
+                <div>
+                  <span>Huella de la clave</span>
+                  <strong id="respaldos-huella">—</strong>
+                </div>
+                <div>
+                  <span>Copias a conservar</span>
+                  <strong id="respaldos-conservar-actual">—</strong>
+                </div>
+              </div>
+
+              <p class="hint" id="respaldos-ultimo-error" hidden></p>
+              <p class="hint" id="aviso-sin-permiso-respaldos" hidden>
+                Tu rol puede consultar esta configuración, pero no cambiarla.
+              </p>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card__body stack">
+              <div>
+                <h2 class="side-title">Qué respaldar</h2>
+                <p class="hint">
+                  La base de datos siempre se incluye. Las carpetas se pueden activar o desactivar.
+                </p>
+              </div>
+
+              <label class="consent">
+                <input type="checkbox" id="respaldos-firmas" />
+                <span>Firmas y fotos <small class="muted" id="respaldos-tamano-firmas"></small></span>
+              </label>
+              <label class="consent">
+                <input type="checkbox" id="respaldos-historias" />
+                <span>Archivos de exámenes <small class="muted" id="respaldos-tamano-historias"></small></span>
+              </label>
+              <label class="consent">
+                <input type="checkbox" id="respaldos-configuracion" />
+                <span>Configuración y logo <small class="muted" id="respaldos-tamano-configuracion"></small></span>
+              </label>
+
+              <p class="muted small" id="respaldos-tamanos">—</p>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card__body stack">
+              <div>
+                <h2 class="side-title">Directorio y frecuencia</h2>
+                <p class="hint">
+                  Elige una carpeta del servidor (o un NAS) y cada cuánto se crea el respaldo.
+                </p>
+              </div>
+
+              <div class="field">
+                <label for="respaldos-directorio">Directorio de respaldos</label>
+                <input
+                  class="input"
+                  id="respaldos-directorio"
+                  maxlength="500"
+                  placeholder="D:\\RespaldosISIM"
+                />
+              </div>
+
+              <div class="field">
+                <label for="respaldos-frecuencia">Frecuencia</label>
+                <select class="select" id="respaldos-frecuencia">
+                  <option value="manual">Manual</option>
+                  <option value="6h">Cada 6 horas</option>
+                  <option value="12h">Cada 12 horas</option>
+                  <option value="diario">Diario</option>
+                  <option value="semanal">Semanal</option>
+                </select>
+              </div>
+
+              <div class="form-grid">
+                <div class="field" id="respaldos-campo-hora">
+                  <label for="respaldos-hora">Hora</label>
+                  <input class="input" id="respaldos-hora" type="time" />
+                </div>
+                <div class="field" id="respaldos-campo-dia">
+                  <label for="respaldos-dia">Día de la semana</label>
+                  <select class="select" id="respaldos-dia">
+                    <option value="1">Lunes</option>
+                    <option value="2">Martes</option>
+                    <option value="3">Miércoles</option>
+                    <option value="4">Jueves</option>
+                    <option value="5">Viernes</option>
+                    <option value="6">Sábado</option>
+                    <option value="0">Domingo</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="respaldos-conservar">Copias a conservar</label>
+                <input class="input" id="respaldos-conservar" type="number" min="1" max="60" />
+              </div>
+
+              <div class="row">
+                <button class="btn btn--primary" id="btn-guardar-respaldos" type="button">
+                  Guardar configuración
+                </button>
+              </div>
+
+              <p class="hint" id="respaldos-config-error" hidden></p>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card__body stack">
+              <div>
+                <h2 class="side-title">Acciones</h2>
+                <p class="hint">
+                  El respaldo se cifra con la clave del sistema. Descárgala y guárdala fuera del
+                  servidor: sin ella no se puede restaurar.
+                </p>
+              </div>
+
+              <div class="row">
+                <button class="btn btn--primary" id="btn-respaldar-ahora" type="button">
+                  Respaldar ahora
+                </button>
+                <button class="btn" id="btn-descargar-clave" type="button">
+                  Descargar clave
+                </button>
+              </div>
+
+              <p class="hint" id="respaldos-accion-estado" hidden></p>
+            </div>
+          </section>
+
+          <section class="card" style="grid-column: 1 / -1">
+            <div class="card__body stack">
+              <div>
+                <h2 class="side-title">Historial de respaldos</h2>
+                <p class="hint">
+                  Archivos creados en el directorio configurado. Puedes verificar que se descifran
+                  correctamente sin restaurarlos.
+                </p>
+              </div>
+              <div id="respaldos-lista" class="stack"></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="panel-roles" role="tabpanel" hidden>
+        <div class="roles-layout">
+          <section class="card">
+            <div class="card__body stack">
+              <div class="row row--between">
+                <div>
+                  <h2 class="side-title">Roles del sistema</h2>
+                  <p class="hint">
+                    Los roles del sistema se pueden editar, pero no eliminar. Los roles
+                    personalizados se pueden crear y eliminar si no tienen usuarios asignados.
+                  </p>
+                </div>
+                <button class="btn btn--primary" id="btn-nuevo-rol" type="button">
+                  + Nuevo rol
+                </button>
+              </div>
+              <div class="roles-list" id="lista-roles"></div>
+            </div>
+          </section>
+
+          <section class="card">
+            <form class="card__body stack" id="form-rol">
+              <div class="row row--between">
+                <div>
+                  <h2 class="side-title" id="rol-titulo">Nuevo rol</h2>
+                  <p class="hint" id="rol-subtitulo">
+                    Define el nombre y los permisos de lectura y edición.
+                  </p>
+                </div>
+                <button class="btn btn--danger btn--sm" id="btn-eliminar-rol" type="button" hidden>
+                  Eliminar rol
+                </button>
+              </div>
+
+              <div class="field">
+                <label for="rol-nombre">Nombre del rol *</label>
+                <input class="input" id="rol-nombre" maxlength="80" required />
+              </div>
+              <div class="field">
+                <label for="rol-slug">Código</label>
+                <input class="input" id="rol-slug" maxlength="32" disabled />
+                <p class="hint">Se genera automáticamente y no cambia después de crear el rol.</p>
+              </div>
+              <div class="field">
+                <label for="rol-descripcion">Descripción</label>
+                <textarea class="textarea" id="rol-descripcion" maxlength="300" style="min-height: 70px"></textarea>
+              </div>
+
+              <div>
+                <h3 class="side-title">Permisos</h3>
+                <p class="hint">
+                  Marca los permisos de <strong>lectura</strong> y de <strong>edición</strong>
+                  que tendrá este rol.
+                </p>
+              </div>
+
+              <div class="roles-permisos" id="roles-permisos"></div>
+
+              <div class="row">
+                <button class="btn btn--primary" id="btn-guardar-rol" type="submit">
+                  Guardar rol
+                </button>
+              </div>
+
+              <p class="hint" id="aviso-sin-permiso-roles" hidden>
+                Tu rol puede consultar los tipos de acceso, pero no modificarlos.
+              </p>
+            </form>
+          </section>
+        </div>
+      </section>
+
+      <section id="panel-demo" role="tabpanel" hidden>
+        <div class="settings-grid">
+          <section class="card">
+            <div class="card__body stack">
+              <div>
+                <h2 class="side-title">Datos de demostración</h2>
+                <p class="hint">
+                  Carga 1000 pacientes, 5000 citas y sus historias clínicas con exámenes para
+                  probar el rendimiento y la concurrencia del sistema.
+                </p>
+              </div>
+
+              <label class="consent">
+                <input type="checkbox" id="demo-activo" />
+                <span>Modo DEMO activado</span>
+              </label>
+
+              <div class="demo-contadores" id="demo-contadores">
+                <div class="demo-contador">
+                  <strong id="demo-pacientes">0</strong>
+                  <span>Pacientes</span>
+                </div>
+                <div class="demo-contador">
+                  <strong id="demo-citas">0</strong>
+                  <span>Citas</span>
+                </div>
+                <div class="demo-contador">
+                  <strong id="demo-historias">0</strong>
+                  <span>Historias</span>
+                </div>
+                <div class="demo-contador">
+                  <strong id="demo-examenes">0</strong>
+                  <span>Exámenes</span>
+                </div>
+              </div>
+
+              <div class="row">
+                <button class="btn btn--primary" id="btn-guardar-demo" type="button">
+                  Activar DEMO y cargar datos
+                </button>
+              </div>
+
+              <p class="hint">
+                Al desactivar el modo DEMO se eliminan únicamente los registros marcados como
+                demostración. Los pacientes y las historias reales no se modifican.
+              </p>
+              <p class="hint" id="aviso-demo-bloqueados" hidden></p>
+
+              <p class="hint" id="aviso-sin-permiso-demo" hidden>
+                Tu rol puede consultar esta configuración, pero no cambiarla.
+              </p>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card__body stack">
+              <h2 class="side-title">Cómo funciona</h2>
+              <p class="muted small">
+                Al activar DEMO se generan pacientes con cédulas y teléfonos ficticios, citas
+                distribuidas en los últimos y próximos 180 días, historias clínicas y exámenes
+                solicitados.
+              </p>
+              <p class="muted small">
+                Las citas de demostración usan estados variados (programada, confirmada,
+                finalizada, cancelada, reagendada y no asistió) para probar la agenda.
+              </p>
+              <p class="muted small">
+                También puedes usar la consola:
+                <code>npm run demo -- on</code>, <code>npm run demo -- off</code> o
+                <code>npm run demo -- estado</code>.
+              </p>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="panel-whatsapp" role="tabpanel" hidden>
+        <div class="settings-grid">
+          <section class="card">
+            <div class="card__body stack">
+              <div>
+                <h2 class="side-title">WhatsApp Business API</h2>
+                <p class="hint">
+                  Configura Meta Cloud API para enviar confirmaciones de citas por WhatsApp.
+                </p>
+              </div>
+
+              <label class="consent">
+                <input type="checkbox" id="whatsapp-habilitado" />
+                <span>Habilitar envío por WhatsApp</span>
+              </label>
+
+              <label class="consent">
+                <input type="checkbox" id="whatsapp-auto" />
+                <span>Enviar automáticamente al crear una cita</span>
+              </label>
+
+              <div class="form-grid">
+                <div class="field">
+                  <label for="whatsapp-phone-id">Phone Number ID</label>
+                  <input class="input" id="whatsapp-phone-id" maxlength="40" inputmode="numeric" />
+                </div>
+                <div class="field">
+                  <label for="whatsapp-api-version">Versión de la API</label>
+                  <input class="input" id="whatsapp-api-version" maxlength="10" placeholder="v21.0" />
+                </div>
+                <div class="field">
+                  <label for="whatsapp-template">Nombre de la plantilla</label>
+                  <input class="input" id="whatsapp-template" maxlength="100" placeholder="confirmacion_cita" />
+                </div>
+                <div class="field">
+                  <label for="whatsapp-language">Idioma</label>
+                  <input class="input" id="whatsapp-language" maxlength="10" placeholder="es" />
+                </div>
+                <div class="field">
+                  <label for="whatsapp-country-code">Código de país</label>
+                  <input class="input" id="whatsapp-country-code" maxlength="4" placeholder="593" />
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="whatsapp-token">Token de acceso</label>
+                <input
+                  class="input"
+                  id="whatsapp-token"
+                  type="password"
+                  autocomplete="new-password"
+                  placeholder="Dejar vacío para conservar el token actual"
+                />
+                <p class="hint" id="whatsapp-token-estado"></p>
+              </div>
+
+              <div class="form-grid">
+                <div class="field">
+                  <label for="whatsapp-verify-token">Token de verificación del webhook</label>
+                  <input class="input" id="whatsapp-verify-token" maxlength="200" />
+                </div>
+                <div class="field">
+                  <label for="whatsapp-app-secret">App Secret de Meta (opcional)</label>
+                  <input
+                    class="input"
+                    id="whatsapp-app-secret"
+                    type="password"
+                    autocomplete="new-password"
+                    placeholder="Dejar vacío para conservar el actual"
+                  />
+                  <p class="hint" id="whatsapp-app-secret-estado"></p>
+                </div>
+              </div>
+
+              <div class="field">
+                <label>URL del webhook para Meta</label>
+                <input class="input" id="whatsapp-webhook-url" readonly />
+                <p class="hint">
+                  Copia esta URL en Meta → WhatsApp → Configuración → Webhooks.
+                </p>
+              </div>
+
+              <div class="row">
+                <button class="btn btn--primary" id="btn-guardar-whatsapp" type="button">
+                  Guardar WhatsApp
+                </button>
+                <button class="btn btn--danger" id="btn-quitar-token-whatsapp" type="button" hidden>
+                  Quitar token
+                </button>
+              </div>
+
+              <p class="hint" id="aviso-sin-permiso-whatsapp" hidden>
+                Tu rol puede consultar esta configuración, pero no cambiarla.
+              </p>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card__body stack">
+              <h2 class="side-title">Cómo configurar</h2>
+              <p class="muted small">
+                1. Crea una app en Meta for Developers y habilita WhatsApp Business.
+              </p>
+              <p class="muted small">
+                2. Copia el Phone Number ID y un token permanente de usuario del sistema.
+              </p>
+              <p class="muted small">
+                3. Crea y aprueba una plantilla con 4 parámetros en el cuerpo, en este orden:
+                <code>{{1}}</code> nombre, <code>{{2}}</code> fecha, <code>{{3}}</code> hora y
+                <code>{{4}}</code> médico.
+              </p>
+              <p class="muted small">
+                Ejemplo: “Hola {{1}}, le recordamos su cita en ISIM el {{2}} a las {{3}} con {{4}}.”
+              </p>
+              <p class="muted small">
+                El teléfono de la paciente se normaliza a formato internacional. Para Ecuador se
+                usa +593.
+              </p>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="panel-migracion" role="tabpanel" hidden>
+        <div class="settings-grid">
+          <section class="card">
+            <div class="card__body stack">
+              <div>
+                <h2 class="side-title">Migrar base de datos anterior</h2>
+                <p class="hint">
+                  Sube el respaldo <code>old_db.sql</code> del sistema anterior. Primero se
+                  analizarán los datos y luego podrás confirmar la migración.
+                </p>
+                <p class="hint">
+                  El sistema corrige tildes y ñ cuando el respaldo mezcla UTF-8 con Latin-1. Los
+                  textos que ya vienen ilegibles en el archivo original no se pueden reconstruir:
+                  se conservan y pueden corregirse después desde cada consulta.
+                </p>
+              </div>
+
+              <div class="field">
+                <label for="migracion-archivo">Archivo SQL</label>
+                <input
+                  class="input"
+                  id="migracion-archivo"
+                  type="file"
+                  accept=".sql,application/sql"
+                />
+                <p class="hint">Tamaño máximo: 150 MB.</p>
+              </div>
+
+              <div class="row">
+                <button class="btn btn--primary" id="btn-analizar-migracion" type="button">
+                  Analizar archivo
+                </button>
+              </div>
+
+              <p class="hint" id="migracion-estado"></p>
+              <div id="migracion-resumen" hidden></div>
+
+              <div class="row" id="migracion-acciones" hidden>
+                <button class="btn btn--primary" id="btn-ejecutar-migracion" type="button">
+                  Migrar datos ahora
+                </button>
+              </div>
+
+              <hr />
+              <div>
+                <h3 class="side-title">Depurar duplicados</h3>
+                <p class="hint">
+                  Revisa pacientes repetidos por cédula o nombre y consultas idénticas. Se
+                  conserva una sola ficha y se mueven sus citas, historias y exámenes.
+                </p>
+              </div>
+              <div class="row">
+                <button class="btn" id="btn-revisar-duplicados" type="button">
+                  Revisar duplicados
+                </button>
+                <button class="btn btn--danger" id="btn-depurar-duplicados" type="button" hidden>
+                  Depurar duplicados
+                </button>
+              </div>
+              <div id="duplicados-resumen" hidden></div>
+
+              <p class="hint" id="aviso-sin-permiso-migracion" hidden>
+                Tu rol puede consultar esta configuración, pero no ejecutar migraciones.
+              </p>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card__body stack">
+              <h2 class="side-title">Orden de la migración</h2>
+              <ol class="migracion-pasos">
+                <li>Catálogos de diagnósticos, medicinas, tratamientos e informes.</li>
+                <li>Pacientes, con cédulas temporales y marca de datos pendientes.</li>
+                <li>Citas y citas históricas para consultas sin cita.</li>
+                <li>Consultas clínicas, recetas y exámenes.</li>
+              </ol>
+              <p class="hint">
+                Antes de ejecutar se crea un respaldo automático de la base actual. La
+                migración se fusiona con los datos existentes y no elimina registros.
+              </p>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="panel-actualizaciones" role="tabpanel" hidden>
+        <div class="settings-grid">
+          <section class="card">
+            <div class="card__body stack">
+              <div>
+                <h2 class="side-title">Versión y actualizaciones</h2>
+                <p class="hint">
+                  La versión instalada se muestra siempre en la cabecera del sistema y en la
+                  pantalla de acceso. Esta preferencia controla si las pantallas abiertas se
+                  recargan solas cuando detectan una versión nueva.
+                </p>
+              </div>
+
+              <div class="info-list">
+                <div class="info-item">
+                  <span>Versión instalada</span><strong id="actualizaciones-version">—</strong>
+                </div>
+                <div class="info-item">
+                  <span>Compilación</span><strong id="actualizaciones-build">—</strong>
+                </div>
+              </div>
+
+              <label class="consent">
+                <input type="checkbox" id="actualizaciones-automaticas" />
+                <span>Aplicar actualizaciones automáticamente al detectar una versión nueva</span>
+              </label>
+
+              <p class="hint">
+                Si está activo, la pantalla se recarga sola cuando no hay un cuadro de diálogo
+                abierto ni un campo en edición. Si está desactivado, aparece el aviso
+                <strong>Actualizar ahora</strong> y cada usuario decide cuándo recargar.
+              </p>
+
+              <div class="row">
+                <button class="btn btn--primary" id="btn-guardar-actualizaciones" type="button">
+                  Guardar preferencia
+                </button>
+              </div>
+
+              <p class="hint" id="aviso-sin-permiso-actualizaciones" hidden>
+                Tu rol puede consultar esta configuración, pero no cambiarla.
+              </p>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card__body stack">
+              <h2 class="side-title">Cómo publicar una actualización</h2>
+              <ol class="migracion-pasos">
+                <li>Sube los cambios a la rama de producción del repositorio.</li>
+                <li>La plataforma de despliegue reconstruye y reinicia el servicio.</li>
+                <li>Los navegadores detectan la versión nueva en un máximo de 60 segundos.</li>
+              </ol>
+              <p class="hint">
+                Esta preferencia no instala código en el servidor: eso lo hace la plataforma
+                (Render, Railway, Fly.io o tu VPS). Define <code>BUILD_ID</code> con el hash del
+                commit para identificar cada despliegue.
+              </p>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="panel-info" role="tabpanel" hidden>
+        <div class="settings-grid">
+          <section class="card">
+            <div class="card__body stack">
+              <h2 class="side-title">Información del sistema</h2>
+              <div class="info-list">
+                <div class="info-item"><span>Sistema</span><strong id="info-sistema">—</strong></div>
+                <div class="info-item"><span>Versión</span><strong id="info-version">—</strong></div>
+                <div class="info-item"><span>Compilación</span><strong id="info-build">—</strong></div>
+                <div class="info-item"><span>Desarrollado por</span><strong id="info-desarrollador">—</strong></div>
+                <div class="info-item"><span>Potenciado por</span><strong id="info-potenciado">—</strong></div>
+                <div class="info-item"><span>Stack</span><strong id="info-stack">—</strong></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card__body stack">
+              <h2 class="side-title">Hecho con cariño</h2>
+              <p class="muted">dyyys0ft con &lt;3</p>
+              <p class="hint">
+                Sistema local de gestión de consentimientos del ISIM-Instituto de la Salud Integral de la Mujer.
+              </p>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/js/pages/ajustes.js"></script>
+  </body>
+</html>
+

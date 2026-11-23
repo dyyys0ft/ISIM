@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#003f93" />
+    <title>ISIM · Pacientes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/isim.css" />
+  </head>
+  <body>
+    <header class="app-header no-print">
+      <div class="app-header__inner container">
+        <a class="brand" href="/agenda.html">
+          <span class="brand__mark" aria-hidden="true">ISIM</span>
+          <span class="brand__text">
+            <strong>ISIM</strong>
+            <small>Salud Integral de la Mujer</small>
+          </span>
+        </a>
+        <button
+          class="nav-toggle"
+          type="button"
+          data-nav-toggle
+          aria-label="Abrir menú"
+          aria-expanded="false"
+        >
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="app-nav" aria-label="Principal">
+          <a href="/dashboard-citas.html" data-nav="dashboard-citas" data-permiso="agenda.ver" hidden>Dashboard</a>
+          <a href="/agenda.html" data-nav="agenda" data-permiso="agenda.ver" hidden>Agenda</a>
+          <a href="/crm.html" data-nav="crm" data-permiso="crm.ver" hidden>CRM</a>
+          <a href="/pacientes.html" data-nav="pacientes">Pacientes</a>
+          <a href="/historias.html" data-nav="historias" data-permiso="historias.ver" hidden>Historias</a>
+          <details class="nav-group">
+            <summary class="nav-group__summary">Documentos</summary>
+            <div class="nav-group__panel">
+              <a href="/documentos.html" data-nav="documentos">Consentimientos</a>
+              <a href="/plantillas.html" data-nav="plantillas" data-permiso="plantillas.gestionar" hidden>Plantillas</a>
+              <a href="/registro.html" data-nav="registro">Historial</a>
+              <a href="/dashboard.html" data-nav="dashboard" data-permiso="dashboard.ver" hidden>Estadísticas consentimientos</a>
+            </div>
+          </details>
+          <details class="nav-group">
+            <summary class="nav-group__summary">Ajustes del sistema</summary>
+            <div class="nav-group__panel">
+              <a href="/ajustes.html" data-nav="ajustes" data-permiso="configuracion.ver" hidden>Configuración del sistema</a>
+              <a href="/usuarios.html" data-nav="usuarios" data-permiso="usuarios.gestionar" hidden>Usuarios</a>
+              <a href="/reportes.html" data-nav="reportes" data-permiso="reportes.ver" hidden>Reportes de usuarios</a>
+              <a href="/cuenta.html" data-nav="cuenta">Mi cuenta</a>
+            </div>
+          </details>
+        </nav>
+        <div class="user-chip">
+          <span class="avatar" data-user-avatar aria-hidden="true">··</span>
+          <span class="user-chip__name" data-user-name>Cargando…</span>
+          <button class="btn btn--ghost btn--sm" data-logout type="button">Salir</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="page container">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Pacientes</h1>
+          <p class="page-sub">Registro de pacientes y acceso a sus consultas</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn--primary" id="btn-nuevo" type="button" data-permiso="pacientes.crear" hidden>+ Nuevo paciente</button>
+        </div>
+      </div>
+
+      <section class="alerta-lopdp" id="alerta-sin-consentimiento" role="status" aria-live="polite" hidden>
+        <span class="alerta-lopdp__icono" aria-hidden="true">⚠</span>
+        <div class="grow">
+          <strong id="alerta-sin-consentimiento-texto"></strong>
+          <p class="small">El consentimiento se registra en la ficha de la paciente o al crearla desde Agenda.</p>
+        </div>
+        <button class="btn btn--sm" id="btn-filtrar-sin-consentimiento" type="button" aria-pressed="false">
+          Ver pacientes
+        </button>
+      </section>
+
+      <section class="card patient-filters">
+        <form id="form-filtros-pacientes">
+          <div class="patient-filters__head">
+            <div>
+              <h2 class="side-title">Filtros de búsqueda</h2>
+              <p class="hint">
+                Busca por nombre, apellido o cédula. Puedes combinar los filtros.
+              </p>
+            </div>
+          </div>
+
+          <div class="patient-filters__grid">
+            <div class="field">
+              <label for="buscar-nombre">Nombre</label>
+              <input class="input" id="buscar-nombre" type="search" placeholder="Ej. María" />
+            </div>
+            <div class="field">
+              <label for="buscar-apellido">Apellido</label>
+              <input class="input" id="buscar-apellido" type="search" placeholder="Ej. Guamán" />
+            </div>
+            <div class="field">
+              <label for="buscar-cedula">Cédula</label>
+              <input class="input" id="buscar-cedula" type="search" placeholder="Número de cédula" />
+            </div>
+          </div>
+
+          <div class="patient-filters__actions">
+            <button class="btn btn--primary" type="submit">Buscar</button>
+            <button class="btn btn--ghost" id="btn-limpiar-busqueda" type="button">
+              Limpiar filtros
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <div class="patient-results-bar">
+        <div class="patient-results-bar__left">
+          <span class="muted small" id="contador-resultados"></span>
+          <div class="patient-sort" role="group" aria-label="Ordenar pacientes">
+            <span class="patient-sort__label">Ordenar</span>
+            <button type="button" data-orden="nombre_asc" aria-pressed="true" title="Nombre A-Z">
+              A-Z
+            </button>
+            <button type="button" data-orden="nombre_desc" aria-pressed="false" title="Nombre Z-A">
+              Z-A
+            </button>
+            <button type="button" data-orden="cedula_asc" aria-pressed="false" title="Cédula ascendente">
+              C.I. ↑
+            </button>
+            <button type="button" data-orden="cedula_desc" aria-pressed="false" title="Cédula descendente">
+              C.I. ↓
+            </button>
+            <button type="button" data-orden="fecha_desc" aria-pressed="false" title="Datos recientes primero">
+              Recientes
+            </button>
+          </div>
+        </div>
+        <div class="patient-columnas" role="group" aria-label="Columnas de pacientes">
+          <span>Columnas</span>
+          <button type="button" data-columnas="3">3</button>
+          <button type="button" data-columnas="4">4</button>
+          <button type="button" data-columnas="5">5</button>
+          <button type="button" data-columnas="6">6</button>
+          <button type="button" data-columnas="7">7</button>
+        </div>
+      </div>
+
+      <div class="patient-grid" id="lista" aria-live="polite"></div>
+      <div class="paginacion" id="paginacion" hidden></div>
+
+      <div class="empty" id="vacio" hidden>
+        <span class="empty__icon" aria-hidden="true">👤</span>
+        <p><strong>No hay pacientes que coincidan.</strong></p>
+        <p class="small">Registra una paciente nueva o cambia la búsqueda.</p>
+      </div>
+    </main>
+
+    <dialog class="dialog dialog--wide" id="dlg-paciente">
+      <form id="form-paciente">
+        <div class="dialog__head">
+          <h2 class="dialog__title" id="titulo-paciente">Nuevo paciente</h2>
+          <button class="btn btn--ghost btn--sm" type="button" data-cerrar aria-label="Cerrar">✕</button>
+        </div>
+        <div class="dialog__body">
+          <p class="hint migracion-pendiente" id="p-datos-pendientes" hidden></p>
+          <div class="form-grid">
+            <div class="field">
+              <label for="p-nombres">Nombres *</label>
+              <input class="input" id="p-nombres" maxlength="120" required />
+            </div>
+            <div class="field">
+              <label for="p-apellidos">Apellidos *</label>
+              <input class="input" id="p-apellidos" maxlength="120" required />
+            </div>
+            <div class="field">
+              <label for="p-cedula">Cédula *</label>
+              <input class="input" id="p-cedula" maxlength="20" required />
+            </div>
+            <div class="field">
+              <label for="p-nacimiento">Fecha de nacimiento</label>
+              <input class="input" id="p-nacimiento" type="date" />
+            </div>
+            <div class="field">
+              <label for="p-sexo">Sexo</label>
+              <select class="select" id="p-sexo">
+                <option value="">Sin especificar</option>
+                <option value="F">Femenino</option>
+                <option value="M">Masculino</option>
+                <option value="X">Otro / no declara</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="p-telefono">Teléfono</label>
+              <input class="input" id="p-telefono" maxlength="30" />
+            </div>
+            <div class="field">
+              <label for="p-email">Correo electrónico</label>
+              <input class="input" id="p-email" type="email" maxlength="120" />
+            </div>
+            <div class="field">
+              <label for="p-direccion">Dirección</label>
+              <input class="input" id="p-direccion" maxlength="200" />
+            </div>
+            <div class="field">
+              <label for="p-ocupacion">Ocupación</label>
+              <input class="input" id="p-ocupacion" maxlength="120" />
+            </div>
+            <div class="field">
+              <label for="p-estado-civil">Estado civil</label>
+              <select class="select" id="p-estado-civil">
+                <option value="">Sin especificar</option>
+                <option value="Soltera/o">Soltera/o</option>
+                <option value="Casada/o">Casada/o</option>
+                <option value="Unión libre">Unión libre</option>
+                <option value="Divorciada/o">Divorciada/o</option>
+                <option value="Viuda/o">Viuda/o</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="p-ciudad">Ciudad</label>
+              <input class="input" id="p-ciudad" maxlength="120" />
+            </div>
+            <div class="field">
+              <label for="p-fecha-registro">Última actualización de datos</label>
+              <input class="input" id="p-fecha-registro" type="date" disabled />
+            </div>
+          </div>
+          <div class="field">
+            <label for="p-alergias">Alergias</label>
+            <input class="input" id="p-alergias" maxlength="500" placeholder="Penicilina, látex…" />
+          </div>
+          <div class="field">
+            <label for="p-notas">Notas</label>
+            <textarea class="textarea" id="p-notas" maxlength="1000" style="min-height: 90px"></textarea>
+          </div>
+
+          <section class="representantes" id="bloque-representantes" hidden>
+            <div>
+              <h3 class="side-title">Representantes legales</h3>
+              <p class="hint">
+                El paciente es menor de 18 años. Es obligatorio registrar al representante legal 1;
+                el representante legal 2 es opcional. Ellos firman los consentimientos.
+              </p>
+            </div>
+
+            <div class="form-grid">
+              <div class="field">
+                <label for="p-rep1-nombre">Representante legal 1 — Nombre *</label>
+                <input class="input" id="p-rep1-nombre" maxlength="120" />
+              </div>
+              <div class="field">
+                <label for="p-rep1-cedula">Representante legal 1 — Cédula *</label>
+                <input class="input" id="p-rep1-cedula" maxlength="20" />
+              </div>
+              <div class="field">
+                <label for="p-rep1-parentesco">Parentesco</label>
+                <select class="select" id="p-rep1-parentesco">
+                  <option value="">Sin especificar</option>
+                  <option value="Madre">Madre</option>
+                  <option value="Padre">Padre</option>
+                  <option value="Tutor legal">Tutor legal</option>
+                  <option value="Abuelo/a">Abuelo/a</option>
+                  <option value="Hermano/a">Hermano/a</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="p-rep1-telefono">Teléfono</label>
+                <input class="input" id="p-rep1-telefono" maxlength="30" />
+              </div>
+            </div>
+
+            <h4 class="side-title" style="margin-top: 0.4rem">Representante legal 2 (opcional)</h4>
+            <div class="form-grid">
+              <div class="field">
+                <label for="p-rep2-nombre">Representante legal 2 — Nombre</label>
+                <input class="input" id="p-rep2-nombre" maxlength="120" />
+              </div>
+              <div class="field">
+                <label for="p-rep2-cedula">Representante legal 2 — Cédula</label>
+                <input class="input" id="p-rep2-cedula" maxlength="20" />
+              </div>
+              <div class="field">
+                <label for="p-rep2-parentesco">Parentesco</label>
+                <select class="select" id="p-rep2-parentesco">
+                  <option value="">Sin especificar</option>
+                  <option value="Madre">Madre</option>
+                  <option value="Padre">Padre</option>
+                  <option value="Tutor legal">Tutor legal</option>
+                  <option value="Abuelo/a">Abuelo/a</option>
+                  <option value="Hermano/a">Hermano/a</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="p-rep2-telefono">Teléfono</label>
+                <input class="input" id="p-rep2-telefono" maxlength="30" />
+              </div>
+            </div>
+          </section>
+        </div>
+        <div class="dialog__foot">
+          <button class="btn" type="button" data-cerrar>Cancelar</button>
+          <button class="btn btn--primary" type="submit" id="btn-guardar-paciente">Guardar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="dialog dialog--wide" id="dlg-documentos-paciente">
+      <div class="dialog__head">
+        <h2 class="dialog__title" id="documentos-paciente-titulo">Documentos de la paciente</h2>
+        <button class="btn btn--ghost btn--sm" type="button" data-cerrar aria-label="Cerrar">✕</button>
+      </div>
+      <div class="dialog__body stack">
+        <p class="hint" id="documentos-paciente-resumen"></p>
+        <div class="documentos-paciente-lista" id="documentos-paciente-lista"></div>
+      </div>
+      <div class="dialog__foot">
+        <button class="btn" type="button" data-cerrar>Cerrar</button>
+      </div>
+    </dialog>
+
+    <script type="module" src="/js/pages/pacientes.js"></script>
+  </body>
+</html>

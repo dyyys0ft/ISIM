@@ -1,0 +1,22 @@
+node_modules/
+.env
+.env.*
+!.env.example
+
+# Logs, bases de datos y material clínico generado
+*.log
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.pfx
+*.p12
+*.key
+*.pem
+data/
+old_db.sql
+
+# Artefactos del sistema operativo
+.DS_Store
+Thumbs.db

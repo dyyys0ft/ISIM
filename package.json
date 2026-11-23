@@ -1,0 +1,48 @@
+{
+  "name": "sgcpm-isim",
+  "version": "1.9.0",
+  "private": true,
+  "description": "Sistema de Gestión de Consentimientos de Procedimientos Médicos - ISIM Riobamba",
+  "type": "module",
+  "engines": {
+    "node": ">=23"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test:e2e": "node tests/e2e.mjs",
+    "test:e2e:doctor": "node tests/e2e-doctor.mjs",
+    "test:e2e:agenda": "node tests/e2e-agenda.mjs",
+    "test:e2e:auth": "node tests/e2e-auth.mjs",
+    "test:e2e:roles": "node tests/e2e-roles.mjs",
+    "test:e2e:calendar": "node tests/e2e-calendar.mjs",
+    "test:e2e:readonly": "node tests/e2e-readonly.mjs",
+    "test:e2e:migration": "node tests/e2e-migration.mjs",
+    "test:e2e:migration:credentials": "node tests/e2e-migracion-credenciales.mjs",
+    "test:e2e:examenes": "node tests/e2e-examenes-carga.mjs",
+    "test:e2e:red": "node tests/e2e-red.mjs",
+    "test:e2e:red:ping": "node tests/e2e-red-ping.mjs",
+    "test:e2e:red:mac": "node tests/e2e-red-mac.mjs",
+    "test:e2e:menores": "node tests/e2e-menores.mjs",
+    "test:e2e:avisos": "node tests/e2e-avisos.mjs",
+    "test:e2e:backups": "node tests/e2e-backups.mjs",
+    "test:e2e:isim-ui": "node tests/e2e-isim-ui.mjs",
+    "test:e2e:nueva-cita": "node tests/e2e-nueva-cita.mjs",
+    "test:e2e:all": "node tests/e2e.mjs && node tests/e2e-doctor.mjs && node tests/e2e-agenda.mjs && node tests/e2e-auth.mjs && node tests/e2e-roles.mjs && node tests/e2e-calendar.mjs && node tests/e2e-readonly.mjs",
+    "test:e2e:concurrency": "node tests/e2e-concurrency.mjs",
+    "test:e2e:stress": "node tests/e2e-stress.mjs",
+    "test:e2e:completo": "node tests/e2e.mjs && node tests/e2e-doctor.mjs && node tests/e2e-agenda.mjs && node tests/e2e-auth.mjs && node tests/e2e-roles.mjs && node tests/e2e-calendar.mjs && node tests/e2e-readonly.mjs && node tests/e2e-examenes-carga.mjs && node tests/e2e-red.mjs && node tests/e2e-red-ping.mjs && node tests/e2e-red-mac.mjs && node tests/e2e-menores.mjs && node tests/e2e-avisos.mjs && node tests/e2e-backups.mjs && node tests/e2e-isim-ui.mjs && node tests/e2e-nueva-cita.mjs && node tests/e2e-migration.mjs && node tests/e2e-concurrency.mjs && node tests/e2e-stress.mjs",
+    "seed": "node server/db/seed.js",
+    "password": "node server/scripts/set-password.js",
+    "migrate:users": "node server/scripts/migrar-usuarios.js",
+    "migrate:users:legacy": "node server/scripts/restaurar-claves-antiguas.js",
+    "restore:backup": "node server/scripts/restaurar-respaldo.js",
+    "demo": "node server/scripts/demo.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^25.18.1"
+  }
+}

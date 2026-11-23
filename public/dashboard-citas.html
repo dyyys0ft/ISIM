@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#003f93" />
+    <title>ISIM · Dashboard de citas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/isim.css" />
+  </head>
+  <body>
+    <header class="app-header no-print">
+      <div class="app-header__inner container">
+        <a class="brand" href="/agenda.html">
+          <span class="brand__mark" aria-hidden="true">ISIM</span>
+          <span class="brand__text">
+            <strong>ISIM</strong>
+            <small>Salud Integral de la Mujer</small>
+          </span>
+        </a>
+        <button
+          class="nav-toggle"
+          type="button"
+          data-nav-toggle
+          aria-label="Abrir menú"
+          aria-expanded="false"
+        >
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="app-nav" aria-label="Principal">
+          <a href="/dashboard-citas.html" data-nav="dashboard-citas" data-permiso="agenda.ver" hidden>Dashboard</a>
+          <a href="/agenda.html" data-nav="agenda" data-permiso="agenda.ver" hidden>Agenda</a>
+          <a href="/crm.html" data-nav="crm" data-permiso="crm.ver" hidden>CRM</a>
+          <a href="/pacientes.html" data-nav="pacientes">Pacientes</a>
+          <a href="/historias.html" data-nav="historias" data-permiso="historias.ver" hidden>Historias</a>
+          <details class="nav-group">
+            <summary class="nav-group__summary">Documentos</summary>
+            <div class="nav-group__panel">
+              <a href="/documentos.html" data-nav="documentos">Consentimientos</a>
+              <a href="/plantillas.html" data-nav="plantillas" data-permiso="plantillas.gestionar" hidden>Plantillas</a>
+              <a href="/registro.html" data-nav="registro">Historial</a>
+              <a href="/dashboard.html" data-nav="dashboard" data-permiso="dashboard.ver" hidden>Estadísticas consentimientos</a>
+            </div>
+          </details>
+          <details class="nav-group">
+            <summary class="nav-group__summary">Ajustes del sistema</summary>
+            <div class="nav-group__panel">
+              <a href="/ajustes.html" data-nav="ajustes" data-permiso="configuracion.ver" hidden>Configuración del sistema</a>
+              <a href="/usuarios.html" data-nav="usuarios" data-permiso="usuarios.gestionar" hidden>Usuarios</a>
+              <a href="/reportes.html" data-nav="reportes" data-permiso="reportes.ver" hidden>Reportes de usuarios</a>
+              <a href="/cuenta.html" data-nav="cuenta">Mi cuenta</a>
+            </div>
+          </details>
+        </nav>
+        <div class="user-chip">
+          <span class="avatar" data-user-avatar aria-hidden="true">··</span>
+          <span class="user-chip__name" data-user-name>Cargando…</span>
+          <button class="btn btn--ghost btn--sm" data-logout type="button">Salir</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="page container">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Dashboard de citas</h1>
+          <p class="page-sub">
+            Pacientes y citas por día, semana y mes, motivos de consulta y embarazos atendidos.
+          </p>
+        </div>
+        <div class="page-actions">
+          <a class="btn btn--primary" href="/agenda.html">Ir a la agenda</a>
+        </div>
+      </div>
+
+      <section class="citas-dashboard card" id="dashboard-citas">
+        <div class="card__body stack">
+          <div class="citas-dashboard__head">
+            <div>
+              <h2 class="side-title">Resumen de la agenda</h2>
+              <p class="hint">
+                Selecciona el periodo del gráfico. Al hacer clic en un día, se abre la agenda
+                en esa fecha.
+              </p>
+            </div>
+            <div class="vista-toggle" id="dashboard-periodo" role="group" aria-label="Periodo del dashboard">
+              <button class="btn btn--sm is-active" type="button" data-periodo="dia">Día</button>
+              <button class="btn btn--sm" type="button" data-periodo="semana">Semana</button>
+              <button class="btn btn--sm" type="button" data-periodo="mes">Mes</button>
+            </div>
+          </div>
+
+          <div class="citas-dashboard__stats" id="dashboard-stats"></div>
+
+          <div class="citas-dashboard__grid citas-dashboard__grid--principal">
+            <div class="citas-dashboard__chart-card">
+              <div class="citas-dashboard__chart-head">
+                <strong id="dashboard-serie-titulo">Pacientes y citas por día</strong>
+                <span class="dashboard-leyenda">
+                  <i class="dashboard-leyenda__cita"></i> Citas
+                  <i class="dashboard-leyenda__paciente"></i> Pacientes
+                </span>
+              </div>
+              <p class="hint" id="dashboard-pista">
+                Haz clic en un día del gráfico para abrir esa fecha en la agenda.
+              </p>
+              <div class="dashboard-chart" id="dashboard-serie" aria-live="polite"></div>
+            </div>
+
+            <div class="citas-dashboard__chart-card">
+              <div class="citas-dashboard__chart-head">
+                <strong>Citas por estado</strong>
+                <span class="muted small">Últimos 30 y próximos 30 días</span>
+              </div>
+              <div class="dashboard-donut" id="dashboard-estados" aria-live="polite"></div>
+            </div>
+          </div>
+
+          <div class="citas-dashboard__grid citas-dashboard__grid--dos">
+            <div class="citas-dashboard__chart-card">
+              <div class="citas-dashboard__chart-head">
+                <strong>Citas por día de la semana</strong>
+                <span class="muted small">Citas activas</span>
+              </div>
+              <div class="dashboard-chart dashboard-chart--compact" id="dashboard-dias-semana" aria-live="polite"></div>
+            </div>
+
+            <div class="citas-dashboard__chart-card">
+              <div class="citas-dashboard__chart-head">
+                <strong>Citas por hora</strong>
+                <span class="muted small">Citas activas</span>
+              </div>
+              <div class="dashboard-chart dashboard-chart--compact" id="dashboard-horas" aria-live="polite"></div>
+            </div>
+          </div>
+
+          <div class="citas-dashboard__grid citas-dashboard__grid--dos">
+            <div class="citas-dashboard__chart-card">
+              <div class="citas-dashboard__chart-head">
+                <strong>Citas por médico</strong>
+                <span class="muted small">Citas activas</span>
+              </div>
+              <div class="dashboard-barras-h" id="dashboard-medicos" aria-live="polite"></div>
+            </div>
+
+            <div class="citas-dashboard__chart-card">
+              <div class="citas-dashboard__chart-head">
+                <strong>Motivos de consulta</strong>
+                <span class="muted small">Últimos 6 meses</span>
+              </div>
+              <div class="dashboard-motivos" id="dashboard-motivos" aria-live="polite"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/js/pages/dashboard-citas.js"></script>
+  </body>
+</html>

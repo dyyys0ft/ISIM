@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#003f93" />
+    <title>ISIM · Estadísticas consentimientos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/isim.css" />
+  </head>
+  <body>
+    <header class="app-header no-print">
+      <div class="app-header__inner container">
+        <a class="brand" href="/agenda.html">
+          <span class="brand__mark" aria-hidden="true">ISIM</span>
+          <span class="brand__text">
+            <strong>ISIM</strong>
+            <small>Salud Integral de la Mujer</small>
+          </span>
+        </a>
+        <button
+          class="nav-toggle"
+          type="button"
+          data-nav-toggle
+          aria-label="Abrir menú"
+          aria-expanded="false"
+        >
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="app-nav" aria-label="Principal">
+          <a href="/dashboard-citas.html" data-nav="dashboard-citas" data-permiso="agenda.ver" hidden>Dashboard</a>
+          <a href="/agenda.html" data-nav="agenda" data-permiso="agenda.ver" hidden>Agenda</a>
+          <a href="/crm.html" data-nav="crm" data-permiso="crm.ver" hidden>CRM</a>
+          <a href="/pacientes.html" data-nav="pacientes">Pacientes</a>
+          <a href="/historias.html" data-nav="historias" data-permiso="historias.ver" hidden>Historias</a>
+          <details class="nav-group">
+            <summary class="nav-group__summary">Documentos</summary>
+            <div class="nav-group__panel">
+              <a href="/documentos.html" data-nav="documentos">Consentimientos</a>
+              <a href="/plantillas.html" data-nav="plantillas" data-permiso="plantillas.gestionar" hidden>Plantillas</a>
+              <a href="/registro.html" data-nav="registro">Historial</a>
+              <a href="/dashboard.html" data-nav="dashboard" data-permiso="dashboard.ver" hidden>Estadísticas consentimientos</a>
+            </div>
+          </details>
+          <details class="nav-group">
+            <summary class="nav-group__summary">Ajustes del sistema</summary>
+            <div class="nav-group__panel">
+              <a href="/ajustes.html" data-nav="ajustes" data-permiso="configuracion.ver" hidden>Configuración del sistema</a>
+              <a href="/usuarios.html" data-nav="usuarios" data-permiso="usuarios.gestionar" hidden>Usuarios</a>
+              <a href="/reportes.html" data-nav="reportes" data-permiso="reportes.ver" hidden>Reportes de usuarios</a>
+              <a href="/cuenta.html" data-nav="cuenta">Mi cuenta</a>
+            </div>
+          </details>
+        </nav>
+        <div class="user-chip">
+          <span class="avatar" data-user-avatar aria-hidden="true">··</span>
+          <span class="user-chip__name" data-user-name>Cargando…</span>
+          <button class="btn btn--ghost btn--sm" data-logout type="button">Salir</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="page container">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Estadísticas consentimientos</h1>
+          <p class="page-sub">Indicadores de consentimientos y pacientes</p>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <article class="stat-card stat-card--blue">
+          <span class="stat-card__label">Firmados hoy</span>
+          <strong class="stat-card__value" id="firmas-hoy">—</strong>
+          <small class="stat-card__hint">consentimientos</small>
+        </article>
+        <article class="stat-card stat-card--blue">
+          <span class="stat-card__label">Esta semana</span>
+          <strong class="stat-card__value" id="firmas-semana">—</strong>
+          <small class="stat-card__hint">consentimientos firmados</small>
+        </article>
+        <article class="stat-card stat-card--blue">
+          <span class="stat-card__label">Este mes</span>
+          <strong class="stat-card__value" id="firmas-mes">—</strong>
+          <small class="stat-card__hint">consentimientos firmados</small>
+        </article>
+        <article class="stat-card stat-card--green">
+          <span class="stat-card__label">Pacientes hoy</span>
+          <strong class="stat-card__value" id="pacientes-hoy">—</strong>
+          <small class="stat-card__hint">registrados</small>
+        </article>
+        <article class="stat-card stat-card--green">
+          <span class="stat-card__label">Pacientes del mes</span>
+          <strong class="stat-card__value" id="pacientes-mes">—</strong>
+          <small class="stat-card__hint">registrados</small>
+        </article>
+        <article class="stat-card">
+          <span class="stat-card__label">Total histórico</span>
+          <strong class="stat-card__value" id="total-firmados">—</strong>
+          <small class="stat-card__hint" id="total-detalle">—</small>
+        </article>
+      </div>
+
+      <section class="card">
+        <div class="card__body stack">
+          <h2 class="side-title">Últimas firmas</h2>
+          <div class="recent-list" id="recientes" aria-live="polite"></div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/js/pages/dashboard.js"></script>
+  </body>
+</html>

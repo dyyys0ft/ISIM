@@ -1,0 +1,36 @@
+SI EL QR NO ABRE EN EL CELULAR
+==============================
+
+IMPORTANTE: POR DEFECTO EL QR USA HTTP
+--------------------------------------
+El QR usa http://IP-DEL-EQUIPO:3000/... para que el celular NO tenga que
+instalar ningun certificado. El navegador puede mostrar "No seguro", pero
+el sistema funciona normalmente.
+
+La computadora del operador puede seguir usando HTTPS:
+  https://127.0.0.1:3443
+
+PASOS PARA EL CELULAR
+---------------------
+1. El celular debe estar en la misma Wi-Fi que la computadora.
+2. Desactiva los datos moviles mientras pruebas.
+3. Escanea el QR. Debe abrir una direccion como:
+   http://192.168.100.140:3000/firma.html?t=...
+4. Confirma los datos y firma.
+
+SI AUN NO CARGA
+---------------
+- Desactiva VPN o Tailscale en el celular y en la computadora.
+- Si Windows pregunta por Node.js, permite el acceso en redes privadas.
+- El router no debe tener "aislamiento de clientes" / AP isolation.
+- Si la IP cambia, el QR cambia automaticamente.
+- Si el firewall bloquea, ejecuta ABRIR_PUERTO_3000.bat como administrador
+  (abre los puertos 3000 y 3443).
+
+HTTPS EN EL CELULAR SIN INSTALAR NADA
+-------------------------------------
+No es posible con una IP local y un certificado propio: el telefono tendria
+que confiar en ese certificado. Las opciones sin instalar nada son:
+  a) Un dominio con certificado publico (Let's Encrypt) que apunte a la IP local.
+  b) Un tunel publico (Cloudflare/Tailscale), con las precauciones de seguridad.
+Mientras no exista un dominio publico, el QR usa HTTP.

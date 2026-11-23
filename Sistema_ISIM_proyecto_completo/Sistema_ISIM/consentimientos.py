@@ -1,0 +1,234 @@
+# -*- coding: utf-8 -*-
+"""
+Motivos de cita del ISIM y plantillas de consentimiento informado
+(estructura del Formulario 024 — Acuerdo Ministerial 5316, MSP).
+Los textos se pueden editar después desde Ajustes > Consentimientos.
+"""
+
+# (motivo que aparece en la lista desplegable, clave de la plantilla de consentimiento)
+MOTIVOS = [
+    {"grupo": "Ginecología", "motivo": "Chequeo ginecológico (control de mujer sana)", "consentimiento": "atencion_gineco"},
+    {"grupo": "Ginecología", "motivo": "Consulta por síntomas ginecológicos", "consentimiento": "atencion_gineco"},
+    {"grupo": "Ginecología", "motivo": "Control de tratamiento", "consentimiento": "atencion_gineco"},
+    {"grupo": "Ginecología", "motivo": "Interpretación de Papanicolaou / resultados", "consentimiento": ""},
+    {"grupo": "Ginecología", "motivo": "Colocación / retiro de DIU o implante", "consentimiento": "anticoncepcion"},
+    {"grupo": "Obstetricia", "motivo": "Control de embarazo + ecografía obstétrica", "consentimiento": "control_prenatal"},
+    {"grupo": "Obstetricia", "motivo": "Control posparto", "consentimiento": "atencion_gineco"},
+    {"grupo": "Ecografía", "motivo": "Ecografía obstétrica", "consentimiento": "ecografia"},
+    {"grupo": "Ecografía", "motivo": "Ecografía ginecológica / transvaginal", "consentimiento": "ecografia"},
+    {"grupo": "Ecografía", "motivo": "Ecografía de mamas", "consentimiento": "ecografia"},
+    {"grupo": "Ecografía", "motivo": "Ecografía general (partes blandas, abdomen, otras)", "consentimiento": "ecografia"},
+    {"grupo": "Procedimientos", "motivo": "Colposcopia con biopsia", "consentimiento": "colposcopia"},
+    {"grupo": "Procedimientos", "motivo": "Fulguración cervical con asa LEEP", "consentimiento": "leep"},
+    {"grupo": "Gineco-estética", "motivo": "Láser vaginal + PRP intravaginal", "consentimiento": "laser_prp"},
+    {"grupo": "Gineco-estética", "motivo": "HIFU", "consentimiento": "hifu"},
+    {"grupo": "Gineco-estética", "motivo": "Silla Emsella (suelo pélvico)", "consentimiento": "emsella"},
+    {"grupo": "Gineco-estética", "motivo": "PRP / péptidos / exosomas", "consentimiento": "regenerativa"},
+    {"grupo": "Gineco-estética", "motivo": "Terapia con hormonas bioidénticas", "consentimiento": "hormonas"},
+    {"grupo": "Urgencias", "motivo": "Emergencia", "consentimiento": "emergencia"},
+]
+
+COMUN_POST = "Acudir a los controles indicados. Comunicar de inmediato cualquier síntoma de alarma."
+
+PLANTILLAS = {
+    "datos": {
+        "titulo": "Autorización para el tratamiento de datos personales y de salud",
+        "tipo": "datos",
+        "texto": (
+            "En cumplimiento de la Ley Orgánica de Protección de Datos Personales y del Reglamento de información "
+            "confidencial en el Sistema Nacional de Salud (AM 5216), declaro que he sido informada de que:\n\n"
+            "1. RESPONSABLE: el Instituto de Salud Integral de la Mujer (ISIM), RUC {ruc}, con domicilio en {direccion}, "
+            "es responsable del tratamiento de mis datos.\n"
+            "2. DATOS: se tratarán mis datos de identificación y contacto, y mis datos de salud (antecedentes, consultas, "
+            "diagnósticos, recetas, exámenes, imágenes de ecografía y procedimientos).\n"
+            "3. FINALIDAD: exclusivamente la atención médica, la elaboración y custodia de mi historia clínica, la "
+            "facturación de los servicios, el envío de recordatorios de citas y resultados por teléfono o WhatsApp, y "
+            "el cumplimiento de obligaciones legales ante la autoridad sanitaria.\n"
+            "4. ENVÍO A TERCEROS: mis muestras y datos estrictamente necesarios podrán enviarse a laboratorios, "
+            "servicios de patología o de imagen para procesar exámenes que yo autorice. No se venderán ni se usarán "
+            "con fines publicitarios sin mi autorización expresa.\n"
+            "5. CONSERVACIÓN: la historia clínica se conserva durante el tiempo que exige la normativa sanitaria vigente.\n"
+            "6. CONFIDENCIALIDAD: solo el personal autorizado accede a mi información, con usuario y contraseña "
+            "personales, y queda registro de cada acceso.\n"
+            "7. MIS DERECHOS: puedo solicitar en cualquier momento el acceso, la rectificación, la actualización, la "
+            "eliminación (cuando la ley lo permita), la oposición y la portabilidad de mis datos, así como una copia de "
+            "mi historia clínica, dirigiéndome a la administración del ISIM.\n\n"
+            "Fotografías o videos con fines académicos o de difusión:   [   ] SÍ autorizo     [   ] NO autorizo\n"
+            "Recordatorios por WhatsApp:   [   ] SÍ autorizo     [   ] NO autorizo"
+        ),
+        "declaracion": "He leído y comprendido esta información, he podido hacer preguntas y AUTORIZO libremente al ISIM el tratamiento de mis datos personales y de salud en los términos descritos.",
+    },
+    "atencion_gineco": {
+        "titulo": "Consentimiento informado para consulta y examen ginecológico",
+        "tipo": "Diagnóstico",
+        "que_es": "Valoración médica ginecológica que incluye la entrevista clínica y el examen físico general, de mamas, abdomen y genitales.",
+        "como": "Con la paciente en posición ginecológica se realiza inspección de genitales externos, especuloscopia (colocación de un espéculo para visualizar el cuello uterino), tacto vaginal y, si está indicado, toma de muestra para citología (Papanicolaou), cultivo de secreción o ecografía transvaginal. Puede estar presente una persona acompañante o personal de enfermería.",
+        "duracion": "15 a 30 minutos.",
+        "beneficios": "Detectar a tiempo infecciones, lesiones precancerosas, tumores y otras alteraciones; orientar el diagnóstico y el tratamiento.",
+        "riesgos_frecuentes": "Molestia o incomodidad durante la especuloscopia o el tacto; sangrado leve (manchado) después de la toma de muestras.",
+        "riesgos_raros": "Sangrado mayor, mareo o reacción vasovagal durante el examen.",
+        "alternativas": "La paciente puede rechazar total o parcialmente el examen físico; en ese caso la valoración se limitará a la entrevista, con menor precisión diagnóstica.",
+        "posterior": "Puede retomar sus actividades de inmediato. Si se tomaron muestras, puede presentar manchado leve por 24 horas. " + COMUN_POST,
+        "no_realizar": "Posible retraso en el diagnóstico de enfermedades ginecológicas y de cáncer de cuello uterino o de mama.",
+    },
+    "anticoncepcion": {
+        "titulo": "Consentimiento informado para colocación o retiro de método anticonceptivo (DIU / implante)",
+        "tipo": "Terapéutico",
+        "que_es": "Inserción o extracción de un dispositivo intrauterino (DIU de cobre u hormonal) o de un implante subdérmico.",
+        "como": "DIU: tras especuloscopia y limpieza del cuello uterino se mide la cavidad uterina y se introduce el dispositivo con su aplicador. Implante: bajo anestesia local se coloca o retira la varilla en la cara interna del brazo.",
+        "duracion": "10 a 20 minutos.",
+        "beneficios": "Anticoncepción reversible, de larga duración y alta eficacia.",
+        "riesgos_frecuentes": "Dolor tipo cólico, sangrado irregular los primeros meses, molestia en el sitio del implante.",
+        "riesgos_raros": "Perforación uterina, expulsión del DIU, infección pélvica, embarazo a pesar del método (incluido ectópico), dificultad para retirar el implante.",
+        "alternativas": "Anticonceptivos orales, inyectables, parche, anillo, preservativo, métodos definitivos.",
+        "posterior": "Control ecográfico de posición del DIU según indicación. Acudir ante dolor intenso, fiebre, sangrado abundante o si no palpa los hilos. " + COMUN_POST,
+        "no_realizar": "Riesgo de embarazo no planificado si no se usa otro método.",
+    },
+    "control_prenatal": {
+        "titulo": "Consentimiento informado para control prenatal y ecografía obstétrica",
+        "tipo": "Diagnóstico",
+        "que_es": "Seguimiento médico del embarazo con valoración materna (presión, peso, altura uterina, latidos fetales) y ecografía obstétrica para evaluar al bebé, la placenta y el líquido amniótico.",
+        "como": "Examen físico materno y ecografía por vía abdominal; en el primer trimestre o para medir el cuello uterino puede requerirse ecografía transvaginal. Se solicitarán exámenes de laboratorio según la edad gestacional.",
+        "duracion": "20 a 40 minutos.",
+        "beneficios": "Vigilar el bienestar materno-fetal, calcular la edad gestacional y detectar oportunamente complicaciones (preeclampsia, diabetes gestacional, alteraciones del crecimiento, placenta, líquido amniótico).",
+        "riesgos_frecuentes": "Ninguno conocido por el ultrasonido diagnóstico. Leve molestia con la sonda transvaginal.",
+        "riesgos_raros": "Ninguno descrito con el uso diagnóstico habitual.",
+        "alternativas": "No existe alternativa equivalente para la valoración fetal no invasiva.",
+        "posterior": "Asistir a todos los controles programados y realizar los exámenes indicados. Acudir de inmediato por sangrado, pérdida de líquido, dolor abdominal, dolor de cabeza intenso, visión borrosa, hinchazón o disminución de movimientos fetales.",
+        "no_realizar": "Riesgo de no detectar a tiempo complicaciones del embarazo que afecten a la madre o al bebé.",
+        "nota": "IMPORTANTE: la ecografía es una herramienta de alta utilidad pero tiene limitaciones. Algunas malformaciones o alteraciones fetales pueden no ser visibles según la edad gestacional, la posición del bebé, la cantidad de líquido amniótico o la contextura materna. Un resultado normal no garantiza al 100 % la ausencia de alteraciones.",
+    },
+    "ecografia": {
+        "titulo": "Consentimiento informado para estudio ecográfico",
+        "tipo": "Diagnóstico",
+        "que_es": "Estudio de imagen mediante ultrasonido, sin radiación, para evaluar órganos y tejidos (obstétrico, ginecológico, mamario o general).",
+        "como": "Se aplica gel sobre la piel y se desliza un transductor. En el estudio transvaginal se introduce en la vagina una sonda delgada cubierta con funda protectora y gel; puede estar presente una persona acompañante o personal de enfermería.",
+        "duracion": "15 a 30 minutos.",
+        "beneficios": "Diagnóstico rápido, seguro e indoloro que orienta el tratamiento.",
+        "riesgos_frecuentes": "Leve molestia con la sonda transvaginal o por la presión del transductor.",
+        "riesgos_raros": "Ninguno descrito con el uso diagnóstico habitual.",
+        "alternativas": "Tomografía, resonancia magnética u otros estudios, según el caso; vía abdominal en lugar de transvaginal (con menor resolución).",
+        "posterior": "Puede retomar sus actividades inmediatamente. Llevar el informe a su médico tratante.",
+        "no_realizar": "Retraso o menor precisión en el diagnóstico.",
+        "nota": "La ecografía depende de las condiciones técnicas y de la paciente; algunas lesiones pequeñas pueden no ser visibles y puede requerirse otro estudio complementario.",
+    },
+    "colposcopia": {
+        "titulo": "Consentimiento informado para colposcopia con biopsia",
+        "tipo": "Diagnóstico",
+        "que_es": "Examen del cuello uterino, la vagina y la vulva con un equipo de aumento (colposcopio) para identificar lesiones, con toma de pequeñas muestras de tejido (biopsia) para estudio de patología.",
+        "como": "En posición ginecológica se coloca el espéculo y se aplican soluciones (ácido acético, lugol) para resaltar las áreas anormales. Si se observan, se toman una o varias biopsias con una pinza; puede tomarse también muestra del canal endocervical. Se puede colocar una sustancia hemostática para controlar el sangrado.",
+        "duracion": "15 a 30 minutos.",
+        "beneficios": "Confirmar o descartar lesiones precancerosas o cáncer de cuello uterino y definir el tratamiento adecuado.",
+        "riesgos_frecuentes": "Dolor tipo cólico o pinchazo al tomar la biopsia; sangrado leve o manchado y flujo oscuro por varios días; ardor por las soluciones.",
+        "riesgos_raros": "Sangrado abundante que requiera taponamiento o sutura; infección; reacción alérgica al yodo (lugol); desmayo o reacción vasovagal.",
+        "alternativas": "Repetir citología o prueba de VPH en un intervalo definido (con riesgo de retraso diagnóstico); conización diagnóstica en casos seleccionados.",
+        "posterior": "Abstinencia sexual, no usar tampones ni duchas vaginales por 7 días o según indicación. Retirar el resultado de patología y acudir a control. Acudir por sangrado abundante, fiebre o dolor intenso.",
+        "no_realizar": "No poder diagnosticar a tiempo lesiones precancerosas o cáncer de cuello uterino, que podrían progresar.",
+    },
+    "leep": {
+        "titulo": "Consentimiento informado para escisión / fulguración cervical con asa LEEP",
+        "tipo": "Terapéutico",
+        "que_es": "Procedimiento que extirpa o destruye el tejido anormal del cuello uterino mediante un asa eléctrica (radiofrecuencia), para tratar lesiones precancerosas, ectropión o lesiones benignas. El tejido extraído se envía a patología.",
+        "como": "En posición ginecológica, bajo anestesia local en el cuello uterino, se colocan placa de retorno y espéculo, se identifica la lesión con soluciones y se reseca o fulgura con el asa. Se controla el sangrado con electrocoagulación y sustancias hemostáticas.",
+        "duracion": "20 a 40 minutos.",
+        "beneficios": "Tratar la lesión y evitar su progresión a cáncer; obtener tejido para confirmar el diagnóstico.",
+        "riesgos_frecuentes": "Dolor tipo cólico, flujo oscuro o sanguinolento y secreción por 2 a 4 semanas; olor del flujo durante la cicatrización.",
+        "riesgos_raros": "Sangrado abundante inmediato o tardío (hasta 2 semanas después) que requiera taponamiento o sutura; infección; quemadura de vagina; estenosis (estrechamiento) del cuello uterino; en embarazos futuros, mayor riesgo de parto prematuro o de insuficiencia cervical; persistencia o recurrencia de la lesión que requiera nuevo tratamiento.",
+        "alternativas": "Crioterapia, láser, conización con bisturí frío, o vigilancia en casos seleccionados.",
+        "posterior": "Reposo físico 7 días; abstinencia sexual por 2 meses o según indicación; no usar tampones ni duchas vaginales. Cumplir el tratamiento indicado y el primer control al mes. Acudir de inmediato por sangrado abundante, fiebre, dolor intenso o secreción maloliente.",
+        "no_realizar": "Posible progresión de la lesión precancerosa a cáncer de cuello uterino.",
+    },
+    "laser_prp": {
+        "titulo": "Consentimiento informado para láser vaginal y plasma rico en plaquetas (PRP) intravaginal",
+        "tipo": "Terapéutico",
+        "que_es": "Tratamiento de gineco-estética y funcional que aplica energía láser sobre la mucosa vaginal y/o vulvar para estimular la producción de colágeno, combinado con infiltración de plasma rico en plaquetas obtenido de la propia sangre de la paciente. Se indica para síndrome genitourinario de la menopausia, sequedad, laxitud vaginal e incontinencia urinaria leve.",
+        "como": "Se extrae una muestra de sangre de la paciente, se centrifuga para obtener el PRP y se infiltra o aplica en la zona tratada. El láser se aplica con una sonda intravaginal y/o pieza vulvar; puede usarse anestesia tópica. Usualmente se requieren varias sesiones.",
+        "duracion": "30 a 60 minutos por sesión.",
+        "beneficios": "Mejoría de la sequedad, elasticidad, lubricación y tono vaginal; posible mejoría de la incontinencia urinaria leve y de la calidad de vida sexual. Los resultados varían en cada paciente y no están garantizados.",
+        "riesgos_frecuentes": "Ardor, calor, enrojecimiento o inflamación leve por 24 a 72 horas; flujo aumentado; moretón en el sitio de extracción de sangre; molestia en las zonas infiltradas.",
+        "riesgos_raros": "Quemadura, cambios de coloración, infección, sangrado, cicatrización anormal, dolor persistente, reacción a la anestesia tópica.",
+        "alternativas": "Estrógenos vaginales locales, lubricantes e hidratantes vaginales, fisioterapia de suelo pélvico, silla Emsella, cirugía en casos indicados.",
+        "posterior": "Abstinencia sexual por 3 a 7 días o según indicación; no usar tampones ni duchas vaginales; usar los productos indicados. " + COMUN_POST,
+        "no_realizar": "Persistencia de los síntomas actuales; no existe riesgo vital por no realizarlo.",
+        "nota": "Tratamiento electivo. Declaro no estar embarazada ni tener infección genital activa, sangrado no estudiado o cáncer ginecológico activo.",
+    },
+    "hifu": {
+        "titulo": "Consentimiento informado para tratamiento con ultrasonido focalizado de alta intensidad (HIFU)",
+        "tipo": "Terapéutico",
+        "que_es": "Tratamiento no invasivo que concentra energía de ultrasonido en capas profundas del tejido para producir calor controlado y estimular el colágeno (rejuvenecimiento vaginal o tratamiento estético, según la zona).",
+        "como": "Se aplica gel y el transductor (vaginal o externo) emite pulsos de energía en la zona a tratar. Se siente calor o pinchazos breves.",
+        "duracion": "20 a 60 minutos según la zona.",
+        "beneficios": "Mejoría de la firmeza y laxitud del tejido. Los resultados son progresivos, varían en cada paciente y no están garantizados.",
+        "riesgos_frecuentes": "Calor, enrojecimiento, inflamación, sensibilidad o molestia por horas o pocos días.",
+        "riesgos_raros": "Quemadura, ampollas, cambios de coloración, adormecimiento temporal, dolor persistente.",
+        "alternativas": "Láser, radiofrecuencia, PRP, fisioterapia, cirugía.",
+        "posterior": "Evitar relaciones sexuales y esfuerzo intenso por 24 a 72 horas si se trató la zona vaginal; seguir las indicaciones de cuidado. " + COMUN_POST,
+        "no_realizar": "Persistencia de los síntomas o de la condición estética actual.",
+        "nota": "Tratamiento electivo. Declaro no estar embarazada ni tener marcapasos, implantes metálicos en la zona ni infección activa.",
+    },
+    "emsella": {
+        "titulo": "Consentimiento informado para terapia de suelo pélvico con silla Emsella",
+        "tipo": "Terapéutico",
+        "que_es": "Terapia no invasiva con energía electromagnética focalizada que provoca miles de contracciones de los músculos del suelo pélvico para fortalecerlos. Indicada para incontinencia urinaria y debilidad del suelo pélvico.",
+        "como": "La paciente permanece sentada y vestida sobre la silla durante la sesión. Se siente un hormigueo y contracciones musculares. Usualmente se indican 6 sesiones, 2 por semana.",
+        "duracion": "28 minutos por sesión.",
+        "beneficios": "Mejoría de la incontinencia urinaria y del tono del suelo pélvico; posible mejoría de la función sexual. Los resultados varían en cada paciente y no están garantizados.",
+        "riesgos_frecuentes": "Cansancio o dolor muscular leve en la zona pélvica, similar a después de hacer ejercicio.",
+        "riesgos_raros": "Dolor pélvico o lumbar transitorio; molestias en personas con dispositivos metálicos.",
+        "alternativas": "Ejercicios de Kegel, fisioterapia de suelo pélvico, láser vaginal, medicamentos, cirugía.",
+        "posterior": "Puede retomar sus actividades de inmediato. Completar el número de sesiones indicado.",
+        "no_realizar": "Persistencia o progresión de los síntomas de incontinencia.",
+        "nota": "CONTRAINDICACIONES — declaro NO tener: embarazo, marcapasos o desfibrilador, implantes metálicos o electrónicos en la zona pélvica o de cadera (incluye DIU de cobre: informar al médico), tumores pélvicos, fiebre ni menstruación abundante el día de la sesión.",
+    },
+    "regenerativa": {
+        "titulo": "Consentimiento informado para terapia regenerativa (PRP, péptidos, exosomas)",
+        "tipo": "Terapéutico",
+        "que_es": "Aplicación de sustancias bioactivas — plasma rico en plaquetas obtenido de la propia sangre, péptidos o exosomas — para estimular la regeneración del tejido en la zona indicada.",
+        "como": "Según el producto: extracción de sangre y centrifugado (PRP) y/o aplicación mediante infiltración con aguja fina, microagujas o aplicación tópica en la zona a tratar. Pueden requerirse varias sesiones.",
+        "duracion": "30 a 60 minutos por sesión.",
+        "beneficios": "Mejoría de la calidad del tejido, la hidratación y la cicatrización. Los resultados varían en cada paciente y no están garantizados.",
+        "riesgos_frecuentes": "Dolor, enrojecimiento, inflamación o moretón en el sitio de aplicación por algunos días.",
+        "riesgos_raros": "Infección, reacción alérgica (péptidos o exosomas), nódulos, cambios de coloración.",
+        "alternativas": "Tratamientos tópicos, láser, HIFU u otros procedimientos según la indicación.",
+        "posterior": "Seguir las indicaciones de cuidado de la zona tratada. " + COMUN_POST,
+        "no_realizar": "Persistencia de la condición actual.",
+        "nota": "Tratamiento electivo. Se me ha informado que algunos de estos productos tienen evidencia científica en desarrollo y que su uso puede ser complementario a otros tratamientos. Declaro no estar embarazada ni tener infección activa en la zona.",
+    },
+    "hormonas": {
+        "titulo": "Consentimiento informado para terapia hormonal (hormonas bioidénticas)",
+        "tipo": "Terapéutico",
+        "que_es": "Tratamiento con hormonas de estructura idéntica a las producidas por el cuerpo (estrógenos, progesterona, testosterona u otras) para aliviar síntomas del climaterio, la menopausia u otros déficits hormonales.",
+        "como": "Administración por vía oral, transdérmica (gel, parche, crema), vaginal o mediante pellets subdérmicos, según la indicación médica, con controles clínicos y de laboratorio periódicos.",
+        "duracion": "Tratamiento de duración prolongada con controles periódicos.",
+        "beneficios": "Mejoría de bochornos, sudoración, alteraciones del sueño y del ánimo, sequedad vaginal, deseo sexual y protección de la masa ósea.",
+        "riesgos_frecuentes": "Sensibilidad mamaria, sangrado vaginal irregular, retención de líquidos, dolor de cabeza, acné o aumento de vello (testosterona).",
+        "riesgos_raros": "Trombosis venosa o embolia, accidente cerebrovascular, enfermedad de la vesícula biliar; posible aumento del riesgo de cáncer de mama o de endometrio con ciertos esquemas y tiempos de uso.",
+        "alternativas": "Medicamentos no hormonales, cambios en el estilo de vida, tratamientos locales vaginales, fitoterapia.",
+        "posterior": "Realizar los exámenes de control (mamografía/eco mamaria, ecografía, laboratorio) en los tiempos indicados. Acudir por sangrado vaginal no esperado, dolor o hinchazón de una pierna, dolor de pecho, dificultad para respirar o dolor de cabeza intenso.",
+        "no_realizar": "Persistencia de los síntomas y pérdida progresiva de masa ósea.",
+    },
+    "emergencia": {
+        "titulo": "Consentimiento informado para atención de emergencia",
+        "tipo": "Diagnóstico y terapéutico",
+        "que_es": "Atención médica inmediata para valorar y estabilizar la condición por la que acude, que puede incluir examen físico y ginecológico, ecografía, administración de medicamentos por vía oral, intramuscular o intravenosa, y toma de exámenes.",
+        "como": "El médico de guardia realiza la valoración y aplica las medidas necesarias según la gravedad. Si se requiere hospitalización, cirugía o un nivel de atención mayor, se coordinará la referencia o transferencia.",
+        "duracion": "Variable según el caso.",
+        "beneficios": "Diagnóstico y tratamiento oportunos para evitar complicaciones.",
+        "riesgos_frecuentes": "Dolor o moretón en el sitio de inyección o canalización; molestias durante el examen.",
+        "riesgos_raros": "Reacción alérgica a medicamentos, flebitis, reacción vasovagal.",
+        "alternativas": "Acudir a otro establecimiento de salud.",
+        "posterior": "Cumplir las indicaciones de alta y acudir a control. Volver de inmediato si los síntomas empeoran.",
+        "no_realizar": "Riesgo de agravamiento de la condición actual.",
+        "nota": "Si por la gravedad no es posible informar a la paciente ni contactar a sus familiares, la atención se realizará y su justificación se registrará en la historia clínica.",
+    },
+}
+
+DECLARACION = ("Declaro que he sido informada por el profesional de salud, en lenguaje claro y comprensible, sobre el "
+               "procedimiento propuesto, sus beneficios, riesgos, alternativas y las consecuencias de no realizarlo. "
+               "He tenido la oportunidad de hacer preguntas y han sido respondidas satisfactoriamente. Sé que puedo "
+               "revocar este consentimiento en cualquier momento. Por lo tanto, en forma libre y voluntaria, "
+               "DOY MI CONSENTIMIENTO para que se me realice el procedimiento descrito.")
+NEGATIVA = ("Una vez que he entendido la información sobre el procedimiento propuesto, sus beneficios y las "
+            "consecuencias de no realizarlo, NO AUTORIZO que se me realice, asumiendo la responsabilidad de esta decisión.")
+REVOCATORIA = ("De forma libre y voluntaria REVOCO el consentimiento otorgado en la fecha indicada y no deseo continuar "
+               "con el procedimiento, asumiendo las consecuencias que de ello se deriven.")

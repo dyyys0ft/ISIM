@@ -1,0 +1,6 @@
+DEMOSTRACIÓN (la que se prueba en Claude)
+- index.html     demostración completa en un solo archivo (se abre con doble clic, sin servidor)
+- mock.js        servidor simulado en JavaScript (datos en el navegador)
+- seed.js / seed_ci.js   medicamentos, esquemas, motivos y consentimientos de ejemplo
+- build.py       vuelve a armar index.html a partir de ../static  (python build.py)
+Usuarios: medico, admin, recepcion, enfermeria — clave demo1234

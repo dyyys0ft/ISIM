@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ISIM — Historia clínica</title>
+  </head>
+  <body>
+    <p>Abriendo la historia clínica en la ficha de la paciente…</p>
+    <script type="module">
+      const parametros = new URLSearchParams(location.search);
+      const pacienteId = parametros.get('patientId');
+      const citaId = parametros.get('appointmentId');
+
+      if (pacienteId) {
+        const destino = new URL('/paciente.html', location.origin);
+        destino.searchParams.set('id', pacienteId);
+        destino.searchParams.set('tab', citaId ? 'consulta' : 'historia');
+        if (citaId) destino.searchParams.set('cita', citaId);
+        location.replace(destino);
+      } else if (citaId) {
+        try {
+          const respuesta = await fetch(`/api/appointments/${encodeURIComponent(citaId)}`, {
+            credentials: 'same-origin',
+          });
+          if (!respuesta.ok) throw new Error('Cita no disponible');
+          const cita = await respuesta.json();
+          const destino = new URL('/paciente.html', location.origin);
+          destino.searchParams.set('id', cita.patient_id);
+          destino.searchParams.set('cita', citaId);
+          destino.searchParams.set('tab', 'consulta');
+          location.replace(destino);
+        } catch {
+          location.replace('/pacientes.html');
+        }
+      } else {
+        location.replace('/pacientes.html');
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#003f93" />
+    <title>ISIM · Agenda de citas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/isim.css" />
+  </head>
+  <body>
+    <header class="app-header no-print">
+      <div class="app-header__inner container">
+        <a class="brand" href="/agenda.html">
+          <span class="brand__mark" aria-hidden="true">ISIM</span>
+          <span class="brand__text">
+            <strong>ISIM</strong>
+            <small>Salud Integral de la Mujer</small>
+          </span>
+        </a>
+        <button
+          class="nav-toggle"
+          type="button"
+          data-nav-toggle
+          aria-label="Abrir menú"
+          aria-expanded="false"
+        >
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="app-nav" aria-label="Principal">
+          <a href="/dashboard-citas.html" data-nav="dashboard-citas" data-permiso="agenda.ver" hidden>Dashboard</a>
+          <a href="/agenda.html" data-nav="agenda" data-permiso="agenda.ver" hidden>Agenda</a>
+          <a href="/crm.html" data-nav="crm" data-permiso="crm.ver" hidden>CRM</a>
+          <a href="/pacientes.html" data-nav="pacientes">Pacientes</a>
+          <a href="/historias.html" data-nav="historias" data-permiso="historias.ver" hidden>Historias</a>
+          <details class="nav-group">
+            <summary class="nav-group__summary">Documentos</summary>
+            <div class="nav-group__panel">
+              <a href="/documentos.html" data-nav="documentos">Consentimientos</a>
+              <a href="/plantillas.html" data-nav="plantillas" data-permiso="plantillas.gestionar" hidden>Plantillas</a>
+              <a href="/registro.html" data-nav="registro">Historial</a>
+              <a href="/dashboard.html" data-nav="dashboard" data-permiso="dashboard.ver" hidden>Estadísticas consentimientos</a>
+            </div>
+          </details>
+          <details class="nav-group">
+            <summary class="nav-group__summary">Ajustes del sistema</summary>
+            <div class="nav-group__panel">
+              <a href="/ajustes.html" data-nav="ajustes" data-permiso="configuracion.ver" hidden>Configuración del sistema</a>
+              <a href="/usuarios.html" data-nav="usuarios" data-permiso="usuarios.gestionar" hidden>Usuarios</a>
+              <a href="/reportes.html" data-nav="reportes" data-permiso="reportes.ver" hidden>Reportes de usuarios</a>
+              <a href="/cuenta.html" data-nav="cuenta">Mi cuenta</a>
+            </div>
+          </details>
+        </nav>
+        <div class="user-chip">
+          <span class="avatar" data-user-avatar aria-hidden="true">··</span>
+          <span class="user-chip__name" data-user-name>Cargando…</span>
+          <button class="btn btn--ghost btn--sm" data-logout type="button">Salir</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="page container">
+      <section class="agenda-hero">
+        <div class="agenda-hero__head">
+          <div>
+            <p class="agenda-hero__eyebrow">Agenda médica ISIM</p>
+            <h1 class="page-title">Citas del día</h1>
+            <p class="page-sub" id="agenda-fecha-hero">Programa, confirma y controla las citas médicas</p>
+          </div>
+          <div class="page-actions agenda-hero__actions">
+            <span class="agenda-controles-fecha" id="controles-fecha">
+              <button class="btn btn--sm btn--ghost" id="btn-dia-anterior" type="button" aria-label="Día anterior">‹</button>
+              <input class="input" id="fecha-agenda" type="date" aria-label="Fecha de la agenda" />
+              <button class="btn btn--sm btn--ghost" id="btn-dia-siguiente" type="button" aria-label="Día siguiente">›</button>
+              <button class="btn btn--sm" id="btn-hoy" type="button">Hoy</button>
+              <button class="btn btn--sm" id="btn-proximas" type="button">Próximas</button>
+            </span>
+            <button class="btn btn--primary" id="btn-nueva-cita" type="button" data-permiso="agenda.gestionar" hidden>
+              + Nueva cita
+            </button>
+          </div>
+        </div>
+        <div class="agenda-hero__bar">
+          <div class="agenda-resumen" id="resumen"></div>
+          <span class="muted small" id="contador"></span>
+        </div>
+      </section>
+
+      <div class="toolbar agenda-toolbar">
+        <span class="vista-toggle" role="group" aria-label="Vista de agenda">
+          <button class="btn btn--sm" id="btn-vista-lista" type="button">Lista</button>
+          <button class="btn btn--sm is-active" id="btn-vista-jornada" type="button">Jornada</button>
+          <button class="btn btn--sm" id="btn-vista-calendario" type="button">Calendario</button>
+        </span>
+        <label class="search agenda-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m20 20-3.5-3.5"></path>
+          </svg>
+          <input class="input" id="buscar" type="search" placeholder="Buscar paciente por nombre o cédula…" aria-label="Buscar citas" />
+        </label>
+        <button
+          class="btn btn--sm"
+          id="btn-filtros"
+          type="button"
+          aria-expanded="false"
+          aria-controls="filtros-agenda"
+        >
+          Filtros
+        </button>
+        <span class="toolbar__spacer"></span>
+      </div>
+
+      <div class="agenda-filtros" id="filtros-agenda" hidden>
+        <select class="select" id="filtro-estado" aria-label="Filtrar por estado">
+          <option value="">Todos los estados</option>
+          <option value="programada">Programadas</option>
+          <option value="confirmada">Confirmadas</option>
+          <option value="en_progreso">En progreso</option>
+          <option value="atendida">Finalizadas</option>
+          <option value="cancelada">Canceladas</option>
+          <option value="reagendada">Reagendadas</option>
+          <option value="no_asistio">No asistió</option>
+        </select>
+        <select class="select" id="filtro-medico" aria-label="Filtrar por médico">
+          <option value="">Todos los médicos</option>
+        </select>
+        <button class="btn btn--sm" id="btn-limpiar-filtros" type="button">Limpiar filtros</button>
+      </div>
+
+      <div class="agenda-resumen" id="resumen"></div>
+
+      <div class="agenda-calendario" id="vista-calendario" hidden>
+        <div class="calendario-head">
+          <button class="btn btn--ghost btn--sm" id="btn-mes-anterior" type="button" aria-label="Mes anterior">‹</button>
+          <strong id="mes-actual"></strong>
+          <button class="btn btn--ghost btn--sm" id="btn-mes-siguiente" type="button" aria-label="Mes siguiente">›</button>
+          <button class="btn btn--sm" id="btn-mes-hoy" type="button">Hoy</button>
+        </div>
+        <div class="calendario-seleccion" id="calendario-seleccion">
+          <div>
+            <span>Fecha seleccionada</span>
+            <strong id="calendario-seleccion-texto"></strong>
+          </div>
+          <button class="btn btn--sm btn--primary" id="btn-ver-dia" type="button">
+            Ver agenda del día
+          </button>
+        </div>
+        <div class="calendario-semana" aria-hidden="true">
+          <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+        </div>
+        <div class="calendario-grid" id="calendario-grid"></div>
+      </div>
+
+      <div class="agenda-jornada" id="vista-jornada" hidden></div>
+
+      <div class="agenda-list" id="lista" aria-live="polite"></div>
+
+      <div class="empty" id="vacio" hidden>
+        <span class="empty__icon" aria-hidden="true">🗓️</span>
+        <p><strong>No hay citas para mostrar.</strong></p>
+        <p class="small">Cambia la fecha, la búsqueda o registra una nueva cita.</p>
+      </div>
+    </main>
+
+    <dialog class="dialog dialog--wide cita-dialog" id="dlg-cita">
+      <form id="form-cita">
+        <div class="dialog__head">
+          <div>
+            <h2 class="dialog__title" id="titulo-cita">Nueva cita</h2>
+            <p class="hint" id="cita-paso-sub">Paso 1 · Busca a la paciente o regístrala</p>
+          </div>
+          <button class="btn btn--ghost btn--sm" type="button" data-cerrar aria-label="Cerrar">✕</button>
+        </div>
+        <div class="dialog__body cita-modal">
+          <input type="hidden" id="cita-id" />
+
+          <section class="cita-paso">
+            <header class="cita-paso__head">
+              <span class="consulta-num">1</span>
+              <div>
+                <h3>Paciente</h3>
+                <p class="hint">Busca por nombre, apellido o cédula. Si es primera vez, regístrala aquí.</p>
+              </div>
+            </header>
+            <div class="cita-buscador">
+              <input
+                class="input"
+                id="cita-paciente-busqueda"
+                placeholder="Ej.: Guaño Susana · 0603002791"
+                autocomplete="off"
+              />
+              <input type="hidden" id="cita-paciente" />
+              <button class="btn" type="button" id="btn-paciente-nueva">+ Paciente nueva</button>
+            </div>
+            <div class="search-results" id="resultados-pacientes-cita" hidden></div>
+            <p class="hint" id="cita-paciente-seleccionado">Escribe al menos 2 letras para buscar.</p>
+          </section>
+
+          <section class="cita-nueva-paciente" id="cita-nueva-paciente" hidden>
+            <header class="cita-paso__head">
+              <span class="consulta-num">+</span>
+              <div>
+                <h3>Admisión de paciente nueva</h3>
+                <p class="hint">Datos mínimos para la cita. Podrás completar la ficha después.</p>
+              </div>
+            </header>
+
+            <div class="cita-form-grid cita-form-grid--4">
+              <div class="field">
+                <label for="np-cedula">Cédula / documento *</label>
+                <input class="input" id="np-cedula" maxlength="20" />
+              </div>
+              <div class="field">
+                <label for="np-apellidos">Apellidos *</label>
+                <input class="input" id="np-apellidos" maxlength="120" />
+              </div>
+              <div class="field">
+                <label for="np-nombres">Nombres *</label>
+                <input class="input" id="np-nombres" maxlength="120" />
+              </div>
+              <div class="field">
+                <label for="np-nacimiento">Fecha de nacimiento *</label>
+                <input class="input" id="np-nacimiento" type="date" />
+              </div>
+              <div class="field">
+                <label for="np-sexo">Sexo</label>
+                <select class="select" id="np-sexo">
+                  <option value="F">Femenino</option>
+                  <option value="M">Masculino</option>
+                  <option value="X">Otro</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="np-telefono">Teléfono</label>
+                <input class="input" id="np-telefono" maxlength="30" />
+              </div>
+              <div class="field">
+                <label for="np-email">Correo</label>
+                <input class="input" id="np-email" maxlength="200" />
+              </div>
+              <div class="field">
+                <label for="np-direccion">Dirección</label>
+                <input class="input" id="np-direccion" maxlength="200" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="np-alergias">Alergias</label>
+              <textarea class="textarea" id="np-alergias" maxlength="2000" style="min-height: 60px" placeholder="Penicilina, AINES, látex…"></textarea>
+            </div>
+
+            <div class="cita-menor" id="cita-menor-aviso" hidden>
+              <strong>⚠ Paciente menor de edad</strong>
+              <span>Registra el representante legal para la cita y el consentimiento.</span>
+            </div>
+
+            <div class="cita-form-grid cita-form-grid--3" id="cita-representantes" hidden>
+              <div class="field">
+                <label for="np-rep1-nombre">Representante legal *</label>
+                <input class="input" id="np-rep1-nombre" maxlength="120" />
+              </div>
+              <div class="field">
+                <label for="np-rep1-cedula">Cédula del representante *</label>
+                <input class="input" id="np-rep1-cedula" maxlength="20" />
+              </div>
+              <div class="field">
+                <label for="np-rep1-parentesco">Parentesco</label>
+                <input class="input" id="np-rep1-parentesco" maxlength="80" />
+              </div>
+            </div>
+
+            <label class="consent">
+              <input type="checkbox" id="np-lopdp" />
+              <span>
+                La paciente autoriza el tratamiento de sus datos personales y de salud conforme a
+                la LOPDP. <strong>*</strong>
+              </span>
+            </label>
+          </section>
+
+          <section class="cita-paso">
+            <header class="cita-paso__head">
+              <span class="consulta-num">2</span>
+              <div>
+                <h3>Datos de la cita</h3>
+                <p class="hint" id="cita-fecha-resumen"></p>
+              </div>
+            </header>
+
+            <div class="cita-form-grid cita-form-grid--3">
+              <div class="field">
+                <label for="cita-medico">Médico responsable</label>
+                <select class="select" id="cita-medico">
+                  <option value="">Sin médico asignado</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="cita-fecha">Fecha y hora *</label>
+                <input class="input" id="cita-fecha" type="datetime-local" required />
+              </div>
+              <div class="field">
+                <label for="cita-duracion">Duración</label>
+                <select class="select" id="cita-duracion">
+                  <option value="15">15 minutos</option>
+                  <option value="30" selected>30 minutos</option>
+                  <option value="45">45 minutos</option>
+                  <option value="60">60 minutos</option>
+                  <option value="90">90 minutos</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="cita-form-grid cita-form-grid--3">
+              <div class="field">
+                <label for="cita-motivo">Motivo de la cita</label>
+                <input
+                  class="input"
+                  id="cita-motivo"
+                  maxlength="500"
+                  list="motivos-cita"
+                  placeholder="Control, ecografía, colposcopia…"
+                />
+                <datalist id="motivos-cita"></datalist>
+              </div>
+              <div class="field">
+                <label for="cita-tipo">Tipo</label>
+                <select class="select" id="cita-tipo">
+                  <option value="normal">Normal</option>
+                  <option value="extra">Extra</option>
+                  <option value="emergencia">Emergencia</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="cita-cupo">Cupo</label>
+                <input class="input" id="cita-cupo" type="number" min="1" max="10" value="1" />
+              </div>
+            </div>
+
+            <div class="field" id="campo-estado-cita">
+              <label for="cita-estado">Estado</label>
+              <select class="select" id="cita-estado">
+                <option value="programada">Programada</option>
+                <option value="confirmada">Confirmada</option>
+                <option value="en_progreso">En progreso</option>
+                <option value="atendida">Finalizada</option>
+                <option value="cancelada">Cancelada</option>
+                <option value="reagendada">Reagendada</option>
+                <option value="no_asistio">No asistió</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="cita-notas">Notas de agenda</label>
+              <textarea class="textarea" id="cita-notas" maxlength="2000" style="min-height: 80px"></textarea>
+            </div>
+          </section>
+        </div>
+        <div class="dialog__foot">
+          <button class="btn" type="button" data-cerrar>Cancelar</button>
+          <button class="btn btn--primary" type="submit" id="btn-guardar-cita">Guardar cita</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="dialog dialog--wide" id="dlg-cita-detalle">
+      <div class="dialog__head">
+        <h2 class="dialog__title">Detalle de la cita</h2>
+        <button class="btn btn--ghost btn--sm" type="button" data-cerrar aria-label="Cerrar">✕</button>
+      </div>
+      <div class="dialog__body stack" id="detalle-cita-contenido"></div>
+      <div class="dialog__foot">
+        <button class="btn" type="button" data-cerrar>Cerrar</button>
+        <button class="btn btn--primary" id="btn-empezar-consulta" type="button" hidden>
+          Empezar consulta
+        </button>
+        <a class="btn btn--primary" id="btn-abrir-consulta" href="#" hidden>Ver consulta</a>
+        <button class="btn" id="btn-editar-cita" type="button" hidden>Editar cita</button>
+        <button class="btn btn--danger" id="btn-cancelar-cita" type="button" hidden>Cancelar cita</button>
+      </div>
+    </dialog>
+
+    <script type="module" src="/js/pages/agenda.js"></script>
+  </body>
+</html>

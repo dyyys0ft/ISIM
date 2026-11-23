@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#003f93" />
+    <title>ISIM · Plantillas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/isim.css" />
+  </head>
+  <body>
+    <header class="app-header no-print">
+      <div class="app-header__inner container">
+        <a class="brand" href="/agenda.html">
+          <span class="brand__mark" aria-hidden="true">ISIM</span>
+          <span class="brand__text">
+            <strong>ISIM</strong>
+            <small>Salud Integral de la Mujer</small>
+          </span>
+        </a>
+        <button
+          class="nav-toggle"
+          type="button"
+          data-nav-toggle
+          aria-label="Abrir menú"
+          aria-expanded="false"
+        >
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="app-nav" aria-label="Principal">
+          <a href="/dashboard-citas.html" data-nav="dashboard-citas" data-permiso="agenda.ver" hidden>Dashboard</a>
+          <a href="/agenda.html" data-nav="agenda" data-permiso="agenda.ver" hidden>Agenda</a>
+          <a href="/crm.html" data-nav="crm" data-permiso="crm.ver" hidden>CRM</a>
+          <a href="/pacientes.html" data-nav="pacientes">Pacientes</a>
+          <a href="/historias.html" data-nav="historias" data-permiso="historias.ver" hidden>Historias</a>
+          <details class="nav-group">
+            <summary class="nav-group__summary">Documentos</summary>
+            <div class="nav-group__panel">
+              <a href="/documentos.html" data-nav="documentos">Consentimientos</a>
+              <a href="/plantillas.html" data-nav="plantillas" data-permiso="plantillas.gestionar" hidden>Plantillas</a>
+              <a href="/registro.html" data-nav="registro">Historial</a>
+              <a href="/dashboard.html" data-nav="dashboard" data-permiso="dashboard.ver" hidden>Estadísticas consentimientos</a>
+            </div>
+          </details>
+          <details class="nav-group">
+            <summary class="nav-group__summary">Ajustes del sistema</summary>
+            <div class="nav-group__panel">
+              <a href="/ajustes.html" data-nav="ajustes" data-permiso="configuracion.ver" hidden>Configuración del sistema</a>
+              <a href="/usuarios.html" data-nav="usuarios" data-permiso="usuarios.gestionar" hidden>Usuarios</a>
+              <a href="/reportes.html" data-nav="reportes" data-permiso="reportes.ver" hidden>Reportes de usuarios</a>
+              <a href="/cuenta.html" data-nav="cuenta">Mi cuenta</a>
+            </div>
+          </details>
+        </nav>
+        <div class="user-chip">
+          <span class="avatar" data-user-avatar aria-hidden="true">··</span>
+          <span class="user-chip__name" data-user-name>Cargando…</span>
+          <button class="btn btn--ghost btn--sm" data-logout type="button">Salir</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="page container">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Plantillas de documentos</h1>
+          <p class="page-sub">Documentos por defecto y las firmas que utiliza cada uno</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn--primary" id="btn-nueva-plantilla" type="button">
+            + Nueva plantilla
+          </button>
+        </div>
+      </div>
+
+      <div class="template-list" id="lista-plantillas" aria-live="polite"></div>
+    </main>
+
+    <dialog class="dialog dialog--wide" id="dlg-plantilla">
+      <form id="form-plantilla">
+        <div class="dialog__head">
+          <h2 class="dialog__title" id="titulo-plantilla">Nueva plantilla</h2>
+          <button class="btn btn--ghost btn--sm" type="button" data-cerrar aria-label="Cerrar">✕</button>
+        </div>
+        <div class="dialog__body">
+          <div class="form-grid">
+            <div class="field">
+              <label for="p-nombre">Nombre *</label>
+              <input class="input" id="p-nombre" maxlength="120" required />
+            </div>
+            <div class="field">
+              <label for="p-tipo">Tipo</label>
+              <input class="input" id="p-tipo" maxlength="40" placeholder="consentimiento" />
+            </div>
+            <div class="field">
+              <label for="p-firma-modo">Firmas del documento</label>
+              <select class="select" id="p-firma-modo">
+                <option value="ambas">Ambas firmas</option>
+                <option value="paciente">Solo paciente</option>
+                <option value="medico">Solo profesional</option>
+              </select>
+              <p class="hint">
+                Define qué firmas se muestran en los documentos creados con esta plantilla.
+              </p>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="p-cuerpo">Contenido HTML *</label>
+            <textarea class="textarea" id="p-cuerpo" spellcheck="false"></textarea>
+            <p class="hint">
+              Variables disponibles: <code>{{paciente.nombre_completo}}</code>,
+              <code>{{paciente.cedula}}</code>, <code>{{paciente.telefono}}</code>,
+              <code>{{usuario.nombre}}</code>, <code>{{usuario.cedula}}</code>,
+              <code>{{usuario.senecit}}</code>, <code>{{institucion}}</code>,
+              <code>{{fecha}}</code>, <code>{{hora}}</code>, <code>{{fecha_hora}}</code>.
+            </p>
+          </div>
+
+          <label class="consent">
+            <input type="checkbox" id="p-activo" checked />
+            <span>Plantilla activa para crear documentos</span>
+          </label>
+        </div>
+        <div class="dialog__foot">
+          <button class="btn" type="button" data-cerrar>Cancelar</button>
+          <button class="btn btn--primary" type="submit" id="btn-guardar-plantilla">Guardar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="dialog dialog--wide preview-dialog" id="dlg-preview-plantilla">
+      <div class="dialog__head">
+        <h2 class="dialog__title" id="titulo-preview-plantilla">Vista previa</h2>
+        <button class="btn btn--ghost btn--sm" type="button" data-cerrar aria-label="Cerrar">✕</button>
+      </div>
+      <div class="dialog__body preview-dialog__body">
+        <p class="hint">
+          Vista de ejemplo con una paciente de prueba y un profesional registrado. Los datos
+          reales se completan al crear el consentimiento.
+        </p>
+        <div class="hoja preview-hoja" id="preview-plantilla-hoja"></div>
+      </div>
+      <div class="dialog__foot">
+        <button class="btn" type="button" data-cerrar>Cerrar</button>
+      </div>
+    </dialog>
+
+    <script type="module" src="/js/pages/plantillas.js"></script>
+  </body>
+</html>

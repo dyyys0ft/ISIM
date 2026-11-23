@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#284f8c" />
+    <title>ISIM — Historias clínicas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/isim.css" />
+  </head>
+  <body>
+    <main class="main">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Historias clínicas</h1>
+          <p class="page-sub">Pacientes con historia clínica y acceso directo a su ficha</p>
+        </div>
+        <span class="muted small" id="contador-historias"></span>
+      </div>
+
+      <section class="card patient-filters">
+        <form id="form-filtros-historias">
+          <div class="patient-filters__head">
+            <div>
+              <h2 class="side-title">Buscar pacientes</h2>
+              <p class="hint">Abre la ficha y consulta la pestaña Historia clínica.</p>
+            </div>
+          </div>
+          <div class="patient-filters__grid">
+            <div class="field">
+              <label for="buscar-nombre">Nombre</label>
+              <input class="input" id="buscar-nombre" type="search" placeholder="Ej. María" />
+            </div>
+            <div class="field">
+              <label for="buscar-apellido">Apellido</label>
+              <input class="input" id="buscar-apellido" type="search" placeholder="Ej. Guamán" />
+            </div>
+            <div class="field">
+              <label for="buscar-cedula">Cédula</label>
+              <input class="input" id="buscar-cedula" type="search" placeholder="Número de cédula" />
+            </div>
+            <div class="field">
+              <label for="orden-historias">Ordenar por</label>
+              <select class="select" id="orden-historias">
+                <option value="nombre_asc">Nombre A-Z</option>
+                <option value="nombre_desc">Nombre Z-A</option>
+                <option value="cedula_asc">Cédula ascendente</option>
+                <option value="cedula_desc">Cédula descendente</option>
+                <option value="fecha_desc">Última consulta reciente</option>
+                <option value="fecha_asc">Última consulta antigua</option>
+              </select>
+            </div>
+          </div>
+          <div class="patient-filters__actions">
+            <button class="btn btn--primary" type="submit">Buscar</button>
+            <button class="btn btn--ghost" id="btn-limpiar-historias" type="button">Limpiar filtros</button>
+          </div>
+        </form>
+      </section>
+
+      <div class="patient-grid" id="lista-historias" aria-live="polite"></div>
+      <div class="paginacion" id="paginacion-historias" hidden></div>
+
+      <div class="empty" id="vacio-historias" hidden>
+        <p><strong>No hay pacientes que coincidan.</strong></p>
+        <p class="small">Cambia la búsqueda o registra una paciente nueva.</p>
+      </div>
+    </main>
+    <script type="module" src="/js/pages/historias.js"></script>
+  </body>
+</html>

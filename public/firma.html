@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#003f93" />
+    <title>ISIM · Firma del consentimiento</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/isim.css" />
+  </head>
+  <body class="sign-body">
+    <header class="sign-header">
+      <div class="brand">
+        <span class="brand__mark" aria-hidden="true">ISIM</span>
+        <span class="brand__text">
+          <strong>ISIM</strong>
+          <small>Salud Integral de la Mujer</small>
+        </span>
+      </div>
+      <span class="badge badge--pendiente_firma" id="estado-badge">Firma pendiente</span>
+    </header>
+
+    <aside class="codigo-firma" id="codigo-firma" hidden>
+      <strong id="codigo-firma-codigo"></strong>
+      <span id="codigo-firma-titulo"></span>
+    </aside>
+
+    <section class="confirm-screen" id="confirmacion" hidden>
+      <div class="confirm-card">
+        <span class="confirm-icon" aria-hidden="true">✓</span>
+        <h1 class="page-title">Confirma tus datos</h1>
+        <p class="muted">
+          Antes de firmar, revisa que este consentimiento corresponda a tus datos.
+        </p>
+
+        <dl class="confirm-data">
+          <div><dt>Paciente</dt><dd id="conf-paciente"></dd></div>
+          <div><dt>Cédula</dt><dd id="conf-cedula"></dd></div>
+          <div id="conf-representante-fila" hidden>
+            <dt>Representante legal</dt>
+            <dd id="conf-representante"></dd>
+          </div>
+          <div><dt>Consentimiento</dt><dd id="conf-titulo"></dd></div>
+          <div><dt>Código</dt><dd id="conf-codigo"></dd></div>
+        </dl>
+
+        <p class="confirm-vigencia" id="conf-vigencia"></p>
+
+        <div class="confirm-actions">
+          <button class="btn btn--primary btn--lg" id="btn-confirmar-datos" type="button">
+            Sí, los datos son correctos
+          </button>
+          <button class="btn btn--danger" id="btn-rechazar-datos" type="button">
+            No, cancelar
+          </button>
+        </div>
+
+        <p class="hint">
+          Si los datos no coinciden, cancela y pide un código nuevo en recepción.
+        </p>
+      </div>
+    </section>
+
+    <main class="sign-main" id="sign-ui" hidden>
+      <section class="sign-doc">
+        <h1 id="titulo">Cargando documento…</h1>
+        <p class="sign-doc__patient" id="paciente"></p>
+        <p class="sign-doc__representante" id="firmante-info" hidden></p>
+        <details class="sign-doc__details" id="detalle-doc">
+          <summary>Leer el documento completo</summary>
+          <article class="hoja" id="contenido"></article>
+        </details>
+      </section>
+
+      <section class="sign-panel">
+        <div>
+          <h2 id="titulo-firma">Firma de la paciente</h2>
+          <p class="muted small">Firme con el dedo, el lápiz o el mouse dentro del recuadro.</p>
+          <p class="sign-note" id="aviso-representante" hidden></p>
+        </div>
+
+        <div class="sign-pad" id="pad-wrap">
+          <canvas id="firma" aria-label="Área de firma"></canvas>
+          <span class="sign-pad__hint" aria-hidden="true">Firma aquí</span>
+        </div>
+
+        <div class="row" style="justify-content: space-between">
+          <div class="sign-actions">
+            <button class="btn btn--ghost btn--sm" id="deshacer" type="button">Deshacer</button>
+            <button class="btn btn--ghost btn--sm" id="limpiar" type="button">Limpiar</button>
+          </div>
+          <span class="muted small" id="vigencia"></span>
+        </div>
+
+        <label class="consent">
+          <input type="checkbox" id="acepto" />
+          <span>
+            Declaro que he leído y comprendido la información del documento y que firmo de forma
+            libre y voluntaria.
+          </span>
+        </label>
+
+        <button class="btn btn--primary btn--lg btn--block" id="btn-firmar" type="button" disabled>
+          Firmar documento
+        </button>
+        <p class="hint" id="mensaje">Conectando con el sistema…</p>
+      </section>
+    </main>
+
+    <section class="success-screen" id="resultado" hidden>
+      <span class="success-icon" id="res-icono" aria-hidden="true">✓</span>
+      <h1 class="page-title" id="res-titulo">Firma registrada</h1>
+      <p class="muted" id="res-texto"></p>
+
+      <div id="pregunta-impresion" hidden>
+        <p><strong>¿Desea imprimir una copia de su consentimiento?</strong></p>
+        <div class="row" style="justify-content: center; margin-top: 0.8rem">
+          <button class="btn btn--primary" id="btn-si-imprimir" type="button">Sí, deseo una copia</button>
+          <button class="btn" id="btn-no-imprimir" type="button">No, gracias</button>
+        </div>
+      </div>
+
+      <p class="print-message" id="mensaje-impresion" hidden>
+        Pregunta en recepción por la copia de tu consentimiento. No lo recibas si no tiene el
+        sello puesto.
+      </p>
+
+      <button class="btn btn--primary" id="res-cerrar" type="button" hidden>Cerrar ventana</button>
+    </section>
+
+    <script type="module" src="/js/pages/firma.js"></script>
+  </body>
+</html>

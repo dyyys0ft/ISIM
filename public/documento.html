@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#003f93" />
+    <title>ISIM · Documento</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/isim.css" />
+  </head>
+  <body>
+    <header class="app-header no-print">
+      <div class="app-header__inner container">
+        <a class="brand" href="/agenda.html">
+          <span class="brand__mark" aria-hidden="true">ISIM</span>
+          <span class="brand__text">
+            <strong>ISIM</strong>
+            <small>Salud Integral de la Mujer</small>
+          </span>
+        </a>
+        <button
+          class="nav-toggle"
+          type="button"
+          data-nav-toggle
+          aria-label="Abrir menú"
+          aria-expanded="false"
+        >
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="app-nav" aria-label="Principal">
+          <a href="/dashboard-citas.html" data-nav="dashboard-citas" data-permiso="agenda.ver" hidden>Dashboard</a>
+          <a href="/agenda.html" data-nav="agenda" data-permiso="agenda.ver" hidden>Agenda</a>
+          <a href="/crm.html" data-nav="crm" data-permiso="crm.ver" hidden>CRM</a>
+          <a href="/pacientes.html" data-nav="pacientes">Pacientes</a>
+          <a href="/historias.html" data-nav="historias" data-permiso="historias.ver" hidden>Historias</a>
+          <details class="nav-group">
+            <summary class="nav-group__summary">Documentos</summary>
+            <div class="nav-group__panel">
+              <a href="/documentos.html" data-nav="documentos">Consentimientos</a>
+              <a href="/plantillas.html" data-nav="plantillas" data-permiso="plantillas.gestionar" hidden>Plantillas</a>
+              <a href="/registro.html" data-nav="registro">Historial</a>
+              <a href="/dashboard.html" data-nav="dashboard" data-permiso="dashboard.ver" hidden>Estadísticas consentimientos</a>
+            </div>
+          </details>
+          <details class="nav-group">
+            <summary class="nav-group__summary">Ajustes del sistema</summary>
+            <div class="nav-group__panel">
+              <a href="/ajustes.html" data-nav="ajustes" data-permiso="configuracion.ver" hidden>Configuración del sistema</a>
+              <a href="/usuarios.html" data-nav="usuarios" data-permiso="usuarios.gestionar" hidden>Usuarios</a>
+              <a href="/reportes.html" data-nav="reportes" data-permiso="reportes.ver" hidden>Reportes de usuarios</a>
+              <a href="/cuenta.html" data-nav="cuenta">Mi cuenta</a>
+            </div>
+          </details>
+        </nav>
+        <div class="user-chip">
+          <span class="avatar" data-user-avatar aria-hidden="true">··</span>
+          <span class="user-chip__name" data-user-name>Cargando…</span>
+          <button class="btn btn--ghost btn--sm" data-logout type="button">Salir</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="page container">
+      <div class="breadcrumb no-print">
+        <a href="/documentos.html" data-nav="documentos">← Volver a consentimientos</a>
+      </div>
+
+      <div class="page-head no-print">
+        <div>
+          <div class="doc-heading">
+            <span id="doc-badge"></span>
+            <h1 class="page-title" id="doc-titulo">Cargando…</h1>
+          </div>
+          <p class="page-sub" id="doc-paciente"></p>
+          <p class="page-sub" id="doc-codigo"></p>
+        </div>
+        <div class="page-actions">
+          <button class="btn" id="btn-editar" type="button" hidden>Editar / nueva versión</button>
+          <button class="btn btn--ghost" id="btn-imprimir" type="button">Imprimir</button>
+          <button class="btn btn--danger" id="btn-anular" type="button" hidden>Anular</button>
+          <button class="btn btn--danger" id="btn-negativa" type="button" hidden>
+            Registrar negativa
+          </button>
+          <button class="btn btn--danger" id="btn-revocatoria" type="button" hidden>
+            Registrar revocatoria
+          </button>
+          <button class="btn btn--primary" id="btn-firmar-aqui" type="button" hidden>
+            Firmar aquí
+          </button>
+          <button class="btn" id="btn-firmar-externo" type="button" hidden>
+            Firmar externo (QR)
+          </button>
+        </div>
+      </div>
+
+      <div class="alerta-copia no-print" id="alerta-copia" hidden>
+        <strong>EL PACIENTE DESEA UNA COPIA IMPRESA DEL CONSENTIMIENTO</strong>
+      </div>
+
+      <p class="hint no-print" id="nota-firma-modo" hidden></p>
+
+      <div class="alerta-consent no-print" id="alerta-consent" hidden></div>
+
+      <div class="doc-layout">
+        <article class="hoja" id="hoja" aria-live="polite"></article>
+
+        <aside class="doc-side no-print">
+          <h2 class="side-title">Versiones del documento</h2>
+          <div class="versiones" id="versiones"></div>
+          <p class="side-note" id="nota-versiones"></p>
+
+          <section class="consent-eventos" id="consent-eventos" hidden>
+            <h2 class="side-title">Negativas y revocatorias</h2>
+            <div id="consent-lista"></div>
+          </section>
+        </aside>
+      </div>
+    </main>
+
+    <dialog class="dialog dialog--wide" id="dlg-editar">
+      <form id="form-editar">
+        <div class="dialog__head">
+          <h2 class="dialog__title">Editar contenido</h2>
+          <button class="btn btn--ghost btn--sm" type="button" data-cerrar aria-label="Cerrar">✕</button>
+        </div>
+        <div class="dialog__body">
+          <p class="hint" id="aviso-edicion"></p>
+          <div class="field">
+            <label for="editar-contenido">Contenido HTML</label>
+            <textarea class="textarea" id="editar-contenido" spellcheck="false"></textarea>
+          </div>
+        </div>
+        <div class="dialog__foot">
+          <button class="btn" type="button" data-cerrar>Cancelar</button>
+          <button class="btn btn--primary" type="submit" id="btn-guardar">Guardar versión</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="dialog" id="dlg-consent">
+      <form id="form-consent">
+        <div class="dialog__head">
+          <h2 class="dialog__title" id="consent-titulo">Registrar negativa</h2>
+          <button class="btn btn--ghost btn--sm" type="button" data-cerrar aria-label="Cerrar">✕</button>
+        </div>
+        <div class="dialog__body stack">
+          <p class="hint" id="consent-aviso"></p>
+          <div class="field">
+            <label for="consent-motivo">Motivo u observación</label>
+            <textarea
+              class="textarea"
+              id="consent-motivo"
+              maxlength="1000"
+              rows="3"
+              placeholder="Opcional: detalle manifestado por la paciente o su representante"
+            ></textarea>
+            <p class="hint">El documento y sus versiones se conservan en el historial.</p>
+          </div>
+        </div>
+        <div class="dialog__foot">
+          <button class="btn" type="button" data-cerrar>Cancelar</button>
+          <button class="btn btn--danger" type="submit" id="btn-guardar-consent">
+            Registrar negativa
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="dialog" id="dlg-enlace">
+      <div class="dialog__head">
+        <h2 class="dialog__title">Pantalla de firma</h2>
+        <button class="btn btn--ghost btn--sm" type="button" data-cerrar aria-label="Cerrar">✕</button>
+      </div>
+      <div class="dialog__body">
+        <p>El navegador bloqueó la ventana emergente. Abre este enlace en el monitor donde firmará la paciente:</p>
+        <a class="input" id="enlace-firma" target="_blank" rel="noopener" style="display: block; word-break: break-all"></a>
+        <p class="hint">El enlace caduca en 10 minutos y solo puede usarse una vez.</p>
+      </div>
+      <div class="dialog__foot">
+        <button class="btn" type="button" data-cerrar>Cerrar</button>
+      </div>
+    </dialog>
+
+    <dialog class="dialog dialog--qr" id="dlg-qr">
+      <div class="dialog__head">
+        <h2 class="dialog__title">Firma externa</h2>
+        <button class="btn btn--ghost btn--sm" type="button" data-cerrar-qr aria-label="Cerrar">✕</button>
+      </div>
+      <div class="dialog__body stack">
+        <p class="hint">
+          Pide al paciente que escanee este código con su celular. El celular debe estar en la
+          misma red Wi-Fi que este equipo.
+        </p>
+        <div class="qr-box" id="qr-contenedor"></div>
+        <p class="qr-code" id="qr-codigo"></p>
+        <p class="hint" id="qr-estado">Esperando al paciente…</p>
+        <p class="hint" id="qr-certificado-aviso" hidden>
+          Si el celular muestra advertencia de seguridad,
+          <a id="qr-certificado" href="#" target="_blank" rel="noopener">instala este certificado</a>
+          antes de escanear.
+        </p>
+        <details class="qr-link">
+          <summary>Ver enlace de firma</summary>
+          <a id="qr-enlace" target="_blank" rel="noopener"></a>
+        </details>
+      </div>
+      <div class="dialog__foot">
+        <button class="btn btn--ghost" id="btn-copiar-enlace" type="button">Copiar enlace</button>
+        <button class="btn btn--danger" id="btn-cancelar-enlace" type="button">Cancelar enlace</button>
+        <button class="btn" id="btn-cerrar-qr" type="button">Cerrar</button>
+      </div>
+    </dialog>
+
+    <script type="module" src="/js/pages/documento.js"></script>
+  </body>
+</html>

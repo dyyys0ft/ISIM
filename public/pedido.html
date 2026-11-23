@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#284f8c" />
+    <title>ISIM — Pedido de examen</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/isim.css" />
+    <link rel="stylesheet" href="/css/pages/impresiones.css" />
+    <style>
+      @page { size: A5 portrait; margin: 6mm; }
+    </style>
+  </head>
+  <body>
+    <div class="impresiones-actions no-print">
+      <button class="btn pri" type="button" id="btn-imprimir">Imprimir / Guardar PDF</button>
+      <button class="btn" type="button" id="btn-volver">Volver</button>
+    </div>
+    <main>
+      <div class="hoja-impresion hoja-impresion--a5" id="pedido-doc">
+        <div class="empty">Cargando pedido…</div>
+      </div>
+    </main>
+    <script type="module" src="/js/pages/pedido.js"></script>
+  </body>
+</html>

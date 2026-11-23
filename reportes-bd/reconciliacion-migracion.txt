@@ -1,0 +1,74 @@
+ISIM — Reconciliación de la migración old_db.sql → base actual
+Fecha: 22/11/2026
+Fuente antigua: old_db.sql (MariaDB 10.4, 74,3 MB)
+Fuente actual: respaldo consistente de producción sgcpm-antes-pruebas-medico-1795357651487.db
+Alcance: solo lectura. No se modificó la base de producción.
+
+RESUMEN DE LA EJECUCIÓN DE MIGRACIÓN (migration_runs.resumen)
+- Pacientes insertados: 20.306 · omitidos: 0
+- Citas insertadas: 37.134 · omitidas: 0
+- Citas históricas creadas desde consultas sin cita: 55.926 · omitidas: 0
+- Consultas insertadas: 91.644 · omitidas: 0
+- Exámenes insertados: 19.200 · omitidos: 0
+- Recetas agrupadas: 22.044
+- Catálogos: 12.650 diagnósticos, 172 medicinas, 2 tratamientos, 2 informes
+- Advertencias de la migración: 0
+- Respaldo previo: data/backups/sgcpm-antes-migracion-9c914793.db
+
+COBERTURA old → actual (migration_map)
+- Pacientes antiguos (datos): 20.236 · sin mapa: 0
+- Códigos de datosgen: 20.231 · sin mapa: 0
+- Citas antiguas (citamedica): 37.134 · sin mapa: 0
+- Consultas antiguas (cons): 91.644 · sin mapa: 0
+- Exámenes antiguos: 19.200 · sin mapa: 0
+- Mapas sin destino en la tabla actual: 0 en pacientes, citas, historias y exámenes
+
+ENLACE AL PACIENTE CORRECTO
+- Citas: 37.134 / 37.134 enlazadas al paciente que corresponde (0 errores)
+- Consultas: 91.644 / 91.644 enlazadas al paciente que corresponde (0 errores)
+
+INTEGRIDAD ACTUAL
+- foreign_key_check: 0 errores
+- Citas sin paciente: 0
+- Historias sin paciente: 0
+- Ítems de receta sin receta: 0
+- Exámenes sin historia: 0
+- Cédulas duplicadas: 0
+- Pacientes sin cédula: 0
+- Pacientes inactivos: 2
+
+CATÁLOGOS Y EXÁMENES
+- Exámenes: 19.200 antiguos → 19.200 actuales
+- Diagnósticos CIE-10: 12.650 → 12.650
+- Medicinas: 172 → 172
+
+RECETAS
+- Filas antiguas: 50.905
+- Líneas de receta conservadas en historias: 50.294
+- Filas completamente vacías (sin medicina, DCI ni otro contenido): 611, descartadas a propósito
+- Grupos de receta: 22.044; historias actuales con texto de receta: 22.008
+  (la diferencia restante corresponde a historias duplicadas fusionadas en la depuración)
+
+DIFERENCIAS DE CONTEO EXPLICADAS
+- Pacientes: 20.306 insertados → 20.049 actuales.
+  257 registros se fusionaron en la depuración de duplicados.
+  4 pacientes fueron creados después de la migración.
+- Citas: 93.060 migradas → 93.067 actuales. 7 citas nuevas posteriores.
+- Historias: 92.183 mapas → 92.116 actuales. 67 duplicados fusionados.
+  5 historias nuevas posteriores; 472 historias sintéticas se crearon para
+  asociar exámenes que no tenían consulta.
+- La base antigua ya traía datos sucios: 12.084 pacientes sin cédula,
+  83 cédulas duplicadas, 836 fechas de nacimiento inválidas y 597 fechas
+  guardadas en el campo sexo. Se normalizaron o fusionaron; no se perdió
+  ningún identificador antiguo.
+
+SALVEDADES
+- En 4 de 40 citas muestreadas el nombre de la cita antigua era más completo
+  o tenía un typo respecto de la ficha (ej. segundo nombre extra). El enlace
+  paciente-cita es correcto en el 100% de los casos; se usó la ficha como
+  fuente de verdad del nombre.
+- El conteo total actual incluye tablas internas (migration_map, audit_log),
+  por eso no debe compararse directamente con el total de filas antiguo.
+- Esta reconciliación verifica cobertura, enlaces, integridad y muestras de
+  campos; no sustituye una revisión clínica caso por caso de las 91.644
+  consultas históricas.

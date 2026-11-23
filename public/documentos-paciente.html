@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#003f93" />
+    <title>ISIM · Documentos clínicos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/isim.css" />
+  </head>
+  <body>
+    <div class="receta-page-actions no-print">
+      <button class="btn btn--primary" id="btn-imprimir-documentos" type="button">
+        Imprimir
+      </button>
+      <button class="btn" id="btn-volver-documentos" type="button">Volver</button>
+    </div>
+
+    <main class="page container">
+      <div class="hoja documentos-paciente" id="documentos-paciente">
+        <div class="empty"><p>Cargando documentos…</p></div>
+      </div>
+    </main>
+
+    <script type="module" src="/js/pages/documentos-paciente.js"></script>
+  </body>
+</html>

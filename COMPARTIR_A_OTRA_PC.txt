@@ -1,0 +1,49 @@
+COMO LLEVAR EL SISTEMA A OTRA COMPUTADORA
+=========================================
+
+NO necesitas npm. El proyecto ya incluye la carpeta node_modules con todo lo que requiere.
+
+PASOS
+-----
+1. En esta computadora, cierra la ventana del servidor (Ctrl+C) para liberar la base de datos.
+2. Copia TODA la carpeta SISTEMA_CONSENTIMIENTOS_ISIM a un USB, disco externo o unidad de red.
+   Deben viajar juntas estas carpetas:
+   - public
+   - server
+   - data
+   - node_modules
+3. En la otra computadora instala Node.js 24 desde https://nodejs.org
+   (npm no es necesario para ejecutar el sistema).
+4. Copia la carpeta a una ubicacion con permisos de escritura, por ejemplo:
+   C:\ISIM
+5. Abre la carpeta y ejecuta: INICIAR_SISTEMA.bat
+   Tambien puedes abrir CMD en la carpeta y escribir:
+   node server/index.js
+6. Abre el navegador en:
+   https://127.0.0.1:3443
+   (o el respaldo HTTP: http://127.0.0.1:3000)
+
+HTTPS Y FIRMA EXTERNA CON QR
+----------------------------
+- La computadora usa HTTPS en el puerto 3443 y HTTP en el 3000.
+- En la computadora nueva ejecuta una vez:
+  GENERAR_CERTIFICADO_HTTPS.bat
+  Eso crea el certificado para la IP de ese equipo e instala la CA en Windows.
+- El QR del celular usa HTTP por defecto (puerto 3000) para no instalar nada.
+- Si quieres HTTPS tambien en el celular, consulta CERTIFICADO_HTTPS.txt.
+- El QR usa automaticamente la IP local del equipo.
+- El celular debe estar conectado a la MISMA red Wi-Fi que la computadora.
+- Si Windows pregunta si permitir Node.js en la red, acepta la opcion de red privada.
+- Si el QR no conecta, ejecuta ABRIR_PUERTO_3000.bat como administrador:
+  abre los puertos 3000 y 3443.
+- Si la IP del equipo cambia, vuelve a ejecutar GENERAR_CERTIFICADO_HTTPS.bat.
+
+IMPORTANTE
+----------
+- La carpeta data contiene la base de datos, usuarios, PIN, firmas y documentos.
+  Si copias esa carpeta, la otra computadora tendra exactamente los mismos datos.
+- Si no quieres llevar los datos, copia todo menos la carpeta data; el sistema
+  creara una base nueva al iniciar.
+- No uses la misma base de datos en dos computadoras al mismo tiempo.
+- No compartas data\sistema\https\server.pfx.
+- Para respaldar, copia la carpeta data completa con el sistema detenido.

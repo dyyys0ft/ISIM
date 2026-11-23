@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#003f93" />
+    <title>ISIM · Historial de firmas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/isim.css" />
+  </head>
+  <body>
+    <header class="app-header no-print">
+      <div class="app-header__inner container">
+        <a class="brand" href="/agenda.html">
+          <span class="brand__mark" aria-hidden="true">ISIM</span>
+          <span class="brand__text">
+            <strong>ISIM</strong>
+            <small>Salud Integral de la Mujer</small>
+          </span>
+        </a>
+        <button
+          class="nav-toggle"
+          type="button"
+          data-nav-toggle
+          aria-label="Abrir menú"
+          aria-expanded="false"
+        >
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="app-nav" aria-label="Principal">
+          <a href="/dashboard-citas.html" data-nav="dashboard-citas" data-permiso="agenda.ver" hidden>Dashboard</a>
+          <a href="/agenda.html" data-nav="agenda" data-permiso="agenda.ver" hidden>Agenda</a>
+          <a href="/crm.html" data-nav="crm" data-permiso="crm.ver" hidden>CRM</a>
+          <a href="/pacientes.html" data-nav="pacientes">Pacientes</a>
+          <a href="/historias.html" data-nav="historias" data-permiso="historias.ver" hidden>Historias</a>
+          <details class="nav-group">
+            <summary class="nav-group__summary">Documentos</summary>
+            <div class="nav-group__panel">
+              <a href="/documentos.html" data-nav="documentos">Consentimientos</a>
+              <a href="/plantillas.html" data-nav="plantillas" data-permiso="plantillas.gestionar" hidden>Plantillas</a>
+              <a href="/registro.html" data-nav="registro">Historial</a>
+              <a href="/dashboard.html" data-nav="dashboard" data-permiso="dashboard.ver" hidden>Estadísticas consentimientos</a>
+            </div>
+          </details>
+          <details class="nav-group">
+            <summary class="nav-group__summary">Ajustes del sistema</summary>
+            <div class="nav-group__panel">
+              <a href="/ajustes.html" data-nav="ajustes" data-permiso="configuracion.ver" hidden>Configuración del sistema</a>
+              <a href="/usuarios.html" data-nav="usuarios" data-permiso="usuarios.gestionar" hidden>Usuarios</a>
+              <a href="/reportes.html" data-nav="reportes" data-permiso="reportes.ver" hidden>Reportes de usuarios</a>
+              <a href="/cuenta.html" data-nav="cuenta">Mi cuenta</a>
+            </div>
+          </details>
+        </nav>
+        <div class="user-chip">
+          <span class="avatar" data-user-avatar aria-hidden="true">··</span>
+          <span class="user-chip__name" data-user-name>Cargando…</span>
+          <button class="btn btn--ghost btn--sm" data-logout type="button">Salir</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="page container">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Historial de firmas</h1>
+          <p class="page-sub">
+            Línea de tiempo de documentos firmados y gestionados, con fecha, hora y responsable.
+          </p>
+        </div>
+        <div class="page-actions">
+          <button class="btn" id="btn-csv" type="button">Exportar CSV</button>
+        </div>
+      </div>
+
+      <span class="chip" id="chip-documento" hidden>
+        <span id="chip-documento-texto"></span>
+        <button type="button" id="quitar-documento" aria-label="Quitar filtro de documento">✕</button>
+      </span>
+
+      <section class="card timeline-filters">
+        <form id="filtros">
+          <div class="timeline-filters__head">
+            <div>
+              <h2 class="side-title">Filtros del historial</h2>
+              <p class="hint">
+                Consulta las firmas por rango de fechas, empleado o documento.
+              </p>
+            </div>
+            <span class="timeline-filters__estado" id="contador"></span>
+          </div>
+
+          <div class="timeline-filters__grid">
+            <div class="field">
+              <label for="f-desde">Desde</label>
+              <input class="input" id="f-desde" type="date" />
+            </div>
+            <div class="field">
+              <label for="f-hasta">Hasta</label>
+              <input class="input" id="f-hasta" type="date" />
+            </div>
+            <div class="field">
+              <label for="f-empleado">Empleado</label>
+              <select class="select" id="f-empleado">
+                <option value="">Todos</option>
+              </select>
+            </div>
+            <div class="field field--search">
+              <label for="f-buscar">Buscar</label>
+              <label class="search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7"></circle>
+                  <path d="m20 20-3.5-3.5"></path>
+                </svg>
+                <input class="input" id="f-buscar" type="search" placeholder="Paciente, cédula o documento…" />
+              </label>
+            </div>
+          </div>
+
+          <div class="timeline-rangos" role="group" aria-label="Rango rápido">
+            <span>Rango rápido:</span>
+            <button type="button" data-rango="hoy">Hoy</button>
+            <button type="button" data-rango="7">Últimos 7 días</button>
+            <button type="button" data-rango="mes">Este mes</button>
+            <button type="button" data-rango="todos" class="is-active">Todos</button>
+          </div>
+
+          <div class="timeline-filters__actions">
+            <button class="btn btn--primary" type="submit">Filtrar</button>
+            <button class="btn btn--ghost" id="btn-limpiar" type="button">Limpiar filtros</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="timeline" id="timeline" hidden aria-live="polite"></section>
+
+      <div class="empty" id="vacio" hidden>
+        <span class="empty__icon" aria-hidden="true">🖋️</span>
+        <p><strong>No hay firmas registradas con esos filtros.</strong></p>
+        <p class="small">Ajusta las fechas, el empleado o el texto de búsqueda.</p>
+      </div>
+    </main>
+
+    <script type="module" src="/js/pages/registro.js"></script>
+  </body>
+</html>

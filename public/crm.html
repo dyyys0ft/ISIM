@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#003f93" />
+    <title>ISIM · CRM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/isim.css" />
+  </head>
+  <body>
+    <header class="app-header no-print">
+      <div class="app-header__inner container">
+        <a class="brand" href="/agenda.html">
+          <span class="brand__mark" aria-hidden="true">ISIM</span>
+          <span class="brand__text">
+            <strong>ISIM</strong>
+            <small>Salud Integral de la Mujer</small>
+          </span>
+        </a>
+        <button
+          class="nav-toggle"
+          type="button"
+          data-nav-toggle
+          aria-label="Abrir menú"
+          aria-expanded="false"
+        >
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="app-nav" aria-label="Principal">
+          <a href="/dashboard-citas.html" data-nav="dashboard-citas" data-permiso="agenda.ver" hidden>Dashboard</a>
+          <a href="/agenda.html" data-nav="agenda" data-permiso="agenda.ver" hidden>Agenda</a>
+          <a href="/crm.html" data-nav="crm" data-permiso="crm.ver" hidden>CRM</a>
+          <a href="/pacientes.html" data-nav="pacientes">Pacientes</a>
+          <a href="/historias.html" data-nav="historias" data-permiso="historias.ver" hidden>Historias</a>
+          <details class="nav-group">
+            <summary class="nav-group__summary">Documentos</summary>
+            <div class="nav-group__panel">
+              <a href="/documentos.html" data-nav="documentos">Consentimientos</a>
+              <a href="/plantillas.html" data-nav="plantillas" data-permiso="plantillas.gestionar" hidden>Plantillas</a>
+              <a href="/registro.html" data-nav="registro">Historial</a>
+              <a href="/dashboard.html" data-nav="dashboard" data-permiso="dashboard.ver" hidden>Estadísticas consentimientos</a>
+            </div>
+          </details>
+          <details class="nav-group">
+            <summary class="nav-group__summary">Ajustes del sistema</summary>
+            <div class="nav-group__panel">
+              <a href="/ajustes.html" data-nav="ajustes" data-permiso="configuracion.ver" hidden>Configuración del sistema</a>
+              <a href="/usuarios.html" data-nav="usuarios" data-permiso="usuarios.gestionar" hidden>Usuarios</a>
+              <a href="/reportes.html" data-nav="reportes" data-permiso="reportes.ver" hidden>Reportes de usuarios</a>
+              <a href="/cuenta.html" data-nav="cuenta">Mi cuenta</a>
+            </div>
+          </details>
+        </nav>
+        <div class="user-chip">
+          <span class="avatar" data-user-avatar aria-hidden="true">··</span>
+          <span class="user-chip__name" data-user-name>Cargando…</span>
+          <button class="btn btn--ghost btn--sm" data-logout type="button">Salir</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="page container">
+      <div class="page-head crm-page-head">
+        <div>
+          <h1 class="page-title">CRM</h1>
+          <p class="page-sub">Conversaciones, solicitudes y prioridades de las pacientes</p>
+        </div>
+        <div class="crm-tabs" role="tablist" aria-label="Secciones del CRM">
+          <button
+            class="crm-tab is-active"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            data-crm-tab="pacientes"
+          >
+            Pacientes
+          </button>
+          <button class="crm-tab" type="button" role="tab" aria-selected="false" data-crm-tab="solicitudes">
+            Solicitudes
+            <span class="crm-tab__count" id="crm-tab-count" hidden></span>
+          </button>
+          <button class="crm-tab" type="button" role="tab" aria-selected="false" data-crm-tab="kanban">
+            Kanban
+          </button>
+        </div>
+      </div>
+
+      <section class="crm-view is-active" data-crm-vista="pacientes" role="tabpanel" aria-label="Pacientes">
+        <div class="crm-layout">
+          <aside class="card crm-sidebar">
+            <div class="crm-sidebar__head">
+              <div>
+                <h2 class="side-title">Contactos</h2>
+                <span class="muted small" id="crm-contador"></span>
+              </div>
+            </div>
+            <label class="search crm-search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-3.5-3.5"></path>
+              </svg>
+              <input class="input" id="crm-buscar" type="search" placeholder="Nombre, cédula o teléfono…" />
+            </label>
+            <div class="crm-contactos" id="crm-contactos"></div>
+          </aside>
+
+          <section class="card crm-chat" id="crm-chat">
+            <div class="crm-chat__empty">
+              <span class="empty__icon" aria-hidden="true">💬</span>
+              <h2>Selecciona una paciente</h2>
+              <p>Elige un contacto para ver la conversación y sus citas.</p>
+            </div>
+          </section>
+
+          <aside class="card crm-panel" id="crm-panel">
+            <div class="crm-panel__empty">
+              <p class="hint">La información de la paciente aparecerá aquí.</p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="crm-view" data-crm-vista="solicitudes" role="tabpanel" aria-label="Solicitudes">
+        <div class="card crm-solicitudes">
+          <div class="crm-toolbar">
+            <label class="search crm-search crm-toolbar__search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-3.5-3.5"></path>
+              </svg>
+              <input
+                class="input"
+                id="sol-buscar"
+                type="search"
+                placeholder="Buscar por paciente, motivo o cédula…"
+              />
+            </label>
+            <select class="select crm-toolbar__select" id="sol-tipo" aria-label="Filtrar por tipo">
+              <option value="">Todos los tipos</option>
+              <option value="tarea">Tareas</option>
+              <option value="queja">Quejas</option>
+              <option value="sugerencia">Sugerencias</option>
+            </select>
+            <select class="select crm-toolbar__select" id="sol-estado" aria-label="Filtrar por estado">
+              <option value="">Todos los estados</option>
+              <option value="pendiente">Pendientes</option>
+              <option value="en_proceso">En proceso</option>
+              <option value="resuelta">Resueltas</option>
+              <option value="cancelada">Canceladas</option>
+            </select>
+            <select class="select crm-toolbar__select" id="sol-prioridad" aria-label="Filtrar por prioridad">
+              <option value="">Todas las prioridades</option>
+              <option value="urgente">Urgente</option>
+              <option value="alta">Alta</option>
+              <option value="media">Media</option>
+              <option value="baja">Baja</option>
+            </select>
+            <button class="btn btn--primary" id="btn-nueva-solicitud" type="button">+ Nueva solicitud</button>
+          </div>
+
+          <div class="table-wrap crm-tabla-wrap">
+            <table class="table crm-tabla">
+              <thead>
+                <tr>
+                  <th>Paciente</th>
+                  <th>Tipo</th>
+                  <th>Motivo</th>
+                  <th>Prioridad</th>
+                  <th>Estado</th>
+                  <th>Límite</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="sol-tabla"></tbody>
+            </table>
+          </div>
+          <p class="hint crm-tabla__pie" id="sol-resumen"></p>
+        </div>
+      </section>
+
+      <section class="crm-view" data-crm-vista="kanban" role="tabpanel" aria-label="Kanban">
+        <div class="card crm-kanban-card">
+          <div class="crm-toolbar">
+            <div class="crm-segmentado" role="group" aria-label="Agrupar el kanban">
+              <button class="is-active" type="button" data-agrupar="prioridad">Por prioridad</button>
+              <button type="button" data-agrupar="estado">Por estado</button>
+            </div>
+            <select class="select crm-toolbar__select" id="kan-tipo" aria-label="Filtrar por tipo">
+              <option value="">Todos los tipos</option>
+              <option value="tarea">Tareas</option>
+              <option value="queja">Quejas</option>
+              <option value="sugerencia">Sugerencias</option>
+            </select>
+            <span class="muted small" id="kan-resumen"></span>
+            <button class="btn btn--primary" id="btn-nueva-kanban" type="button">+ Nueva solicitud</button>
+          </div>
+          <div class="crm-kanban" id="crm-kanban"></div>
+          <p class="hint crm-kanban__ayuda">
+            Arrastra una tarjeta a otra columna para cambiar su
+            <span id="kan-ayuda-campo">prioridad</span>. Haz clic en una tarjeta para editarla.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <dialog class="dialog" id="dlg-crm-tarea">
+      <form id="form-crm-tarea">
+        <div class="dialog__head">
+          <h2 class="dialog__title" id="tarea-titulo">Nueva solicitud</h2>
+          <button class="btn btn--ghost btn--sm" type="button" data-cerrar aria-label="Cerrar">✕</button>
+        </div>
+        <div class="dialog__body stack">
+          <input type="hidden" id="tarea-id" />
+          <input type="hidden" id="tarea-patient-id" />
+          <div class="field crm-paciente-picker">
+            <label for="tarea-paciente-buscar">Paciente *</label>
+            <input
+              class="input"
+              id="tarea-paciente-buscar"
+              autocomplete="off"
+              placeholder="Busca por nombre o cédula…"
+            />
+            <p class="hint" id="tarea-paciente-estado"></p>
+            <div class="crm-paciente-resultados" id="tarea-paciente-resultados" hidden></div>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="tarea-tipo">Tipo</label>
+              <select class="select" id="tarea-tipo">
+                <option value="tarea">Tarea</option>
+                <option value="queja">Queja</option>
+                <option value="sugerencia">Sugerencia</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="tarea-prioridad">Prioridad</label>
+              <select class="select" id="tarea-prioridad">
+                <option value="baja">Baja</option>
+                <option value="media" selected>Media</option>
+                <option value="alta">Alta</option>
+                <option value="urgente">Urgente</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="tarea-estado">Estado</label>
+              <select class="select" id="tarea-estado">
+                <option value="pendiente" selected>Pendiente</option>
+                <option value="en_proceso">En proceso</option>
+                <option value="resuelta">Resuelta</option>
+                <option value="cancelada">Cancelada</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="tarea-fecha-limite">Fecha límite</label>
+              <input class="input" id="tarea-fecha-limite" type="date" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="tarea-motivo">Motivo *</label>
+            <input class="input" id="tarea-motivo" maxlength="200" required />
+          </div>
+          <div class="field">
+            <label for="tarea-descripcion">Descripción</label>
+            <textarea class="textarea" id="tarea-descripcion" maxlength="3000" style="min-height: 90px"></textarea>
+          </div>
+        </div>
+        <div class="dialog__foot">
+          <button class="btn" type="button" data-cerrar>Cancelar</button>
+          <button class="btn btn--primary" type="submit" id="btn-guardar-tarea">Guardar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="/js/pages/crm.js"></script>
+  </body>
+</html>
