@@ -9,14 +9,13 @@ verificación.
 | Rol | Agente | Modelo |
 |---|---|---|
 | Orquestador | `orquestador` | `opencode-go/gpt-6-luna#high` |
-| Planificador | `planificador` | `opencode-go/gpt-6-luna#high` |
+| Planificador | `planificador` | `opencode-go/claude-haiku-5-5#high` |
 | Investigador | `investigador` | `opencode-go/claude-haiku-5-5#medium` |
 | Ejecutor | `ejecutor` | `opencode-go/deepseek-v4.1-flash#high` |
 | Revisor | `revisor` | `opencode-go/gpt-6-luna#high` |
 
-Si se prefiere abaratar la planificación, el planificador puede cambiarse a
-`opencode-go/claude-haiku-5-5#high`. La ejecución debe quedarse en DeepSeek y
-la revisión en un modelo distinto al ejecutor.
+La planificación usa Haiku 5.5 high. La ejecución se queda en DeepSeek V4.1
+Flash high y la revisión en GPT-6 Luna high, un modelo distinto al ejecutor.
 
 ## Uso
 

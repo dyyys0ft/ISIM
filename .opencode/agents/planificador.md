@@ -1,7 +1,7 @@
 ---
 description: Convierte la investigación del proyecto ISIM en un plan ejecutable con alcance, pruebas y riesgos.
 mode: subagent
-model: opencode-go/gpt-6-luna#high
+model: opencode-go/claude-haiku-5-5#high
 steps: 24
 permissions:
   - action: edit
