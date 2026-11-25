@@ -361,3 +361,25 @@ export function ocultarCargador() {
   cargadorGlobal = null;
   document.body.removeAttribute('aria-busy');
 }
+
+/**
+ * Avisa antes de cerrar la pestaña si el formulario tiene cambios sin guardar.
+ * Devuelve una función para marcar el formulario como limpio después de guardar.
+ */
+export function protegerCambios(formulario) {
+  let sucio = false;
+  const marcar = () => {
+    sucio = true;
+  };
+  const alSalir = (evento) => {
+    if (!sucio || !formulario.isConnected) return;
+    evento.preventDefault();
+    evento.returnValue = '';
+  };
+  formulario.addEventListener('input', marcar);
+  formulario.addEventListener('change', marcar);
+  window.addEventListener('beforeunload', alSalir);
+  return () => {
+    sucio = false;
+  };
+}

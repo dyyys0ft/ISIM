@@ -9,54 +9,63 @@ const TABS = [
   {
     id: 'datos',
     titulo: 'Datos de la paciente',
+    corto: 'Datos',
     permiso: 'pacientes.ver',
     editar: 'pacientes.editar',
   },
   {
     id: 'signos',
     titulo: 'Signos vitales',
+    corto: 'Signos',
     permiso: ['historias.resumen', 'historias.ver'],
     editar: 'historias.gestionar',
   },
   {
     id: 'historia',
     titulo: 'Historia clínica',
+    corto: 'Historia',
     permiso: ['historias.resumen', 'historias.ver'],
     editar: 'historias.gestionar',
   },
   {
     id: 'consulta',
     titulo: 'Consulta del día',
+    corto: 'Consulta',
     permiso: 'historias.ver',
     editar: 'historias.gestionar',
   },
   {
     id: 'receta',
     titulo: 'Receta',
+    corto: 'Receta',
     permiso: 'historias.ver',
     editar: 'historias.gestionar',
   },
   {
     id: 'examenes',
     titulo: 'Exámenes',
+    corto: 'Exámenes',
     permiso: ['historias.resumen', 'historias.ver'],
     editar: 'examenes.gestionar',
   },
   {
     id: 'pedidos',
     titulo: 'Pedidos',
+    corto: 'Pedidos',
     permiso: 'historias.ver',
     editar: 'historias.gestionar',
   },
   {
     id: 'consentimientos',
     titulo: 'Consentimientos',
+    corto: 'Consent.',
     permiso: 'documentos.ver',
     editar: ['documentos.crear', 'documentos.firmar'],
   },
   {
     id: 'certificados',
     titulo: 'Certificados',
+    corto: 'Certif.',
     permiso: 'historias.ver',
     editar: 'historias.gestionar',
   },
@@ -70,6 +79,19 @@ let usuario = null;
 let paciente = null;
 let cita = null;
 let tabActual = parametros.get('tab') || '';
+let tabsResizeConectado = false;
+
+function actualizarTabsDesborde() {
+  const tabs = $('#tabs-ficha');
+  const wrap = $('#tabs-ficha-wrap');
+  if (!tabs) return;
+  const alInicio = tabs.scrollLeft <= 2;
+  const alFin = tabs.scrollLeft + tabs.clientWidth >= tabs.scrollWidth - 2;
+  for (const nodo of [tabs, wrap]) {
+    nodo?.classList.toggle('tabs--inicio', alInicio);
+    nodo?.classList.toggle('tabs--fin', alFin);
+  }
+}
 
 function autorizado(permiso) {
   if (!permiso) return true;
@@ -138,10 +160,10 @@ function pintarNota() {
         </div>
         ${puedeEditarNota() ? '<button class="btn btn--sm" type="button" id="editar-nota">Editar</button>' : ''}
       </div>`
-      : `<div class="nota-imp vacia">
+      : `<div class="nota-imp nota-imp--compacta">
         <span class="ic" aria-hidden="true">＋</span>
-        <span class="grow">Sin nota importante. Agregue aquí lo que el médico debe tener presente siempre (hipertensa, anticoagulada, embarazo de alto riesgo…).</span>
-        <button class="btn btn--sm" type="button" id="editar-nota">Agregar nota</button>
+        <span class="grow">Sin nota importante</span>
+        <button class="btn btn--sm" type="button" id="editar-nota">Agregar</button>
       </div>`
   }`;
 }
@@ -187,14 +209,16 @@ function pintarCabecera() {
         : ''}
       ${turno}
     </section>
-    <nav class="tabs" id="tabs-ficha" aria-label="Pestañas de la ficha">
-      ${visibles
-        .map(
-          (tab) =>
-            `<button type="button" class="${tab.id === tabActual ? 'on' : ''}" data-tab="${tab.id}" aria-current="${tab.id === tabActual}">${escapeHtml(tab.titulo)}</button>`
-        )
-        .join('')}
-    </nav>
+    <div class="tabs-ficha-wrap" id="tabs-ficha-wrap">
+      <nav class="tabs" id="tabs-ficha" aria-label="Pestañas de la ficha">
+        ${visibles
+          .map(
+            (tab) =>
+              `<button type="button" class="${tab.id === tabActual ? 'on' : ''}" data-tab="${tab.id}" aria-current="${tab.id === tabActual}" aria-label="${escapeHtml(tab.titulo)}"><span class="tab-etiqueta tab-etiqueta--larga" aria-hidden="true">${escapeHtml(tab.titulo)}</span><span class="tab-etiqueta tab-etiqueta--corta" aria-hidden="true">${escapeHtml(tab.corto || tab.titulo)}</span></button>`
+          )
+          .join('')}
+      </nav>
+    </div>
     <section class="ficha-panel" id="panel-tab"><div class="empty">Cargando…</div></section>`;
 
   $('#volver-ficha')?.addEventListener('click', () => {
@@ -204,6 +228,21 @@ function pintarCabecera() {
 
   for (const boton of $$('#tabs-ficha [data-tab]')) {
     boton.addEventListener('click', () => irA(boton.dataset.tab));
+  }
+
+  const tabs = $('#tabs-ficha');
+  tabs?.addEventListener('scroll', actualizarTabsDesborde, { passive: true });
+  if (!tabsResizeConectado) {
+    tabsResizeConectado = true;
+    window.addEventListener('resize', actualizarTabsDesborde, { passive: true });
+  }
+
+  const tabActivo = $('#tabs-ficha [data-tab].on');
+  if (tabActivo) {
+    requestAnimationFrame(() => {
+      tabActivo.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      actualizarTabsDesborde();
+    });
   }
 
   $('#editar-nota')?.addEventListener('click', editarNota);
@@ -290,6 +329,9 @@ async function irA(destino) {
     const activo = boton.dataset.tab === destino;
     boton.classList.toggle('on', activo);
     boton.setAttribute('aria-current', String(activo));
+    if (activo) {
+      boton.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
   }
   await pintarPestana();
 }

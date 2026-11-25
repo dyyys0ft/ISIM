@@ -1,6 +1,7 @@
 import { api } from '../api.js';
 import { $, $$, badge, escapeHtml, fmtFecha, setBusy, toast } from '../ui.js';
 import { initChrome } from '../chrome.js';
+import { puede } from '../permisos.js';
 import { alSalir } from '../navegacion.js';
 
 const parametros = new URLSearchParams(location.search);
@@ -14,6 +15,9 @@ let medicos = [];
 let pacienteSeleccionado = null;
 let pacientesTimer = null;
 let pacientesSeq = 0;
+let plantillasPorId = new Map();
+let plantillaPreferidaId = '';
+let tituloAutomatico = true;
 
 async function cargarDocumentos() {
   const q = $('#buscar').value.trim();
@@ -47,6 +51,7 @@ function render(documentos) {
   lista.innerHTML = documentos
     .map(
       (doc) => `
+      <div class="doc-item-wrap">
       <a class="doc-item" data-nav="documentos" href="/documento.html?id=${encodeURIComponent(doc.id)}">
         <div class="doc-item__main">
           <div class="doc-item__title-row">
@@ -63,7 +68,16 @@ function render(documentos) {
           <span>${escapeHtml(fmtFecha(doc.actualizado_en, { time: true }))}</span>
           <span>${doc.firmas} firma${doc.firmas === 1 ? '' : 's'}</span>
         </div>
-      </a>`
+      </a>
+      ${
+        puede(usuarioActual, 'documentos.firmar') &&
+        ['borrador', 'pendiente_firma'].includes(doc.estado)
+          ? `<button class="btn btn--sm doc-item__firmar" type="button" data-firmar-doc="${encodeURIComponent(
+              doc.id
+            )}">Firmar</button>`
+          : ''
+      }
+      </div>`
     )
     .join('');
 }
@@ -151,6 +165,16 @@ async function abrirNuevo() {
         // sin paciente preseleccionado
       }
     }
+    let plantilla = plantillasPorId.get(String($('#nuevo-tipo').value));
+    if (!plantilla && plantillaPreferidaId) {
+      $('#nuevo-tipo').value = plantillaPreferidaId;
+      plantilla = plantillasPorId.get(plantillaPreferidaId);
+    }
+    const titulo = $('#nuevo-titulo');
+    if (plantilla && titulo && !titulo.value.trim()) {
+      titulo.value = plantilla.nombre || '';
+      tituloAutomatico = true;
+    }
     preseleccionarMedico();
     return;
   }
@@ -183,6 +207,20 @@ async function abrirNuevo() {
         )
         .join('');
 
+    plantillasPorId = new Map(plantillas.map((t) => [String(t.id), t]));
+    const plantillaInicial =
+      plantillas.find((t) => /consentimiento/i.test(`${t.tipo || ''} ${t.nombre || ''}`)) ||
+      plantillas[0];
+    if (plantillaInicial) {
+      plantillaPreferidaId = String(plantillaInicial.id);
+      selectPlantilla.value = plantillaPreferidaId;
+      const titulo = $('#nuevo-titulo');
+      if (titulo && !titulo.value.trim()) {
+        titulo.value = plantillaInicial.nombre || '';
+        tituloAutomatico = true;
+      }
+    }
+
     if (patientId) {
       const paciente = pacienteFiltro || (await api.get(`/api/patients/${encodeURIComponent(patientId)}`));
       seleccionarPaciente(paciente);
@@ -195,17 +233,58 @@ async function abrirNuevo() {
   }
 }
 
+function actualizarAvisoMedico() {
+  const aviso = $('#nuevo-medico-aviso');
+  const select = $('#nuevo-medico');
+  if (!aviso || !select) return;
+  const medico = medicos.find((m) => String(m.id) === String(select.value));
+  if (!medico) {
+    aviso.textContent = 'Sin médico responsable: el documento se creará sin firma profesional.';
+  } else if (medico.tiene_firma) {
+    aviso.textContent = 'Su firma se precargará en el documento.';
+  } else {
+    aviso.textContent = 'Este médico no tiene firma registrada; el documento se creará sin firma profesional.';
+  }
+}
+
 function preseleccionarMedico() {
   const select = $('#nuevo-medico');
   if (!select) return;
 
-  if (usuarioActual?.rol === 'medico' && medicos.some((m) => m.id === usuarioActual.id)) {
-    select.value = usuarioActual.id;
+  const propio = medicos.find((m) => String(m.id) === String(usuarioActual?.id));
+  if (usuarioActual?.rol === 'medico' && propio?.tiene_firma) {
+    select.value = propio.id;
+    actualizarAvisoMedico();
     return;
   }
 
-  const medico = medicos[0];
+  const medico = medicos.find((m) => m.tiene_firma) || medicos[0];
   select.value = medico?.id || '';
+  actualizarAvisoMedico();
+}
+
+async function firmarDocumentoDesdeLista(id) {
+  const ventana = window.open(
+    '',
+    'firma_consentimiento',
+    'popup=yes,width=1080,height=860'
+  );
+  try {
+    const sesion = await api.post(
+      `/api/documents/${encodeURIComponent(id)}/sign-session`
+    );
+    const url = new URL(sesion.url, location.origin).href;
+    if (ventana && !ventana.closed) {
+      ventana.location.href = url;
+      toast('Sesión de firma iniciada');
+      await cargarDocumentos();
+    } else {
+      window.location.href = `/documento.html?id=${encodeURIComponent(id)}`;
+    }
+  } catch (error) {
+    ventana?.close();
+    toast(error.message, 'error');
+  }
 }
 
 async function crear(evento) {
@@ -213,11 +292,16 @@ async function crear(evento) {
   const pacienteId = $('#nuevo-paciente').value;
   const titulo = $('#nuevo-titulo').value.trim();
   const plantillaId = $('#nuevo-tipo').value;
+  const accionFirmar = evento.submitter?.dataset.accion === 'firmar';
 
   if (!pacienteId) return toast('Selecciona una paciente', 'error');
   if (!titulo) return toast('Escribe un título para el documento', 'error');
 
-  const boton = $('#btn-crear');
+  // La ventana se abre antes del await para que el navegador no la bloquee.
+  const ventana = accionFirmar
+    ? window.open('', 'firma_consentimiento', 'popup=yes,width=1080,height=860')
+    : null;
+  const boton = accionFirmar ? $('#btn-crear-firmar') : $('#btn-crear');
   setBusy(boton, true, 'Creando…');
 
   try {
@@ -227,9 +311,40 @@ async function crear(evento) {
       templateId: plantillaId || null,
       medicoId: $('#nuevo-medico').value || null,
     });
-    $('#dlg-nuevo').close();
-    window.location.href = `/documento.html?id=${encodeURIComponent(doc.id)}`;
+
+    if (!accionFirmar) {
+      setBusy(boton, false);
+      $('#dlg-nuevo').close();
+      window.location.href = `/documento.html?id=${encodeURIComponent(doc.id)}`;
+      return;
+    }
+
+    try {
+      const sesion = await api.post(
+        `/api/documents/${encodeURIComponent(doc.id)}/sign-session`
+      );
+      const url = new URL(sesion.url, location.origin).href;
+      setBusy(boton, false);
+      $('#dlg-nuevo').close();
+      if (ventana && !ventana.closed) {
+        ventana.location.href = url;
+        toast('Documento creado. Continúa la firma.');
+        await cargarDocumentos();
+      } else {
+        window.location.href = `/documento.html?id=${encodeURIComponent(doc.id)}`;
+      }
+    } catch (falloFirma) {
+      ventana?.close();
+      setBusy(boton, false);
+      $('#dlg-nuevo').close();
+      toast(
+        `Documento creado, pero no se pudo iniciar la firma: ${falloFirma.message}`,
+        'error'
+      );
+      window.location.href = `/documento.html?id=${encodeURIComponent(doc.id)}`;
+    }
   } catch (error) {
+    ventana?.close();
     setBusy(boton, false);
     toast(error.message, 'error');
   }
@@ -251,6 +366,27 @@ async function cargarPacienteFiltro() {
 function conectarEventos() {
   $('#btn-nuevo').addEventListener('click', abrirNuevo);
   $('#form-nuevo').addEventListener('submit', crear);
+
+  $('#nuevo-tipo').addEventListener('change', () => {
+    const plantilla = plantillasPorId.get(String($('#nuevo-tipo').value));
+    const titulo = $('#nuevo-titulo');
+    if (plantilla && titulo && (tituloAutomatico || !titulo.value.trim())) {
+      titulo.value = plantilla.nombre || '';
+      tituloAutomatico = true;
+    }
+  });
+  $('#nuevo-titulo').addEventListener('input', () => {
+    tituloAutomatico = false;
+  });
+  $('#nuevo-medico').addEventListener('change', actualizarAvisoMedico);
+
+  $('#lista').addEventListener('click', (evento) => {
+    const boton = evento.target.closest('[data-firmar-doc]');
+    if (!boton) return;
+    evento.preventDefault();
+    evento.stopPropagation();
+    firmarDocumentoDesdeLista(boton.dataset.firmarDoc);
+  });
 
   $('#quitar-paciente').addEventListener('click', () => {
     window.location.href = '/documentos.html';
@@ -285,6 +421,7 @@ function conectarEventos() {
 
   $('#dlg-nuevo').addEventListener('close', () => {
     $('#form-nuevo').reset();
+    tituloAutomatico = true;
     limpiarPaciente();
     $('#nuevo-paciente-busqueda').value = '';
     $('#paciente-seleccionado').textContent = 'Escribe al menos 2 letras para buscar.';
@@ -304,6 +441,13 @@ async function init() {
   conectarEventos();
   await cargarPacienteFiltro();
   await cargarDocumentos();
+
+  if (
+    new URLSearchParams(location.search).get('nuevo') === '1' &&
+    puede(usuarioActual, 'documentos.crear')
+  ) {
+    await abrirNuevo();
+  }
 }
 
 init();

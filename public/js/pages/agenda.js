@@ -1845,6 +1845,11 @@ async function init() {
     } catch {
       // El paciente del enlace ya no está disponible.
     }
+  } else if (
+    new URLSearchParams(location.search).get('nueva') === '1' &&
+    puede(estadoPagina.usuario, 'agenda.gestionar')
+  ) {
+    abrirNueva();
   }
 }
 

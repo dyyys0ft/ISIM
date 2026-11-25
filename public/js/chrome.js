@@ -3,6 +3,7 @@ import { $, $$, initials, registrarRoles, etiquetaRol } from './ui.js';
 import { puede } from './permisos.js';
 import { instalarNavegacion, generacionPagina } from './navegacion.js';
 import { iniciarVersion } from './version.js';
+import { initBusquedaGlobal } from './busqueda-global.js';
 
 let chromeGlobalListo = false;
 let vigilanteSesion = null;
@@ -190,6 +191,14 @@ function montarShell(usuario, active) {
       </span>
     </a>
     <nav class="nav" aria-label="Principal">${htmlNavegacion(usuario, active)}</nav>
+    <button class="top-search" type="button" data-abrir-busqueda aria-label="Buscar paciente o acción (Ctrl+K)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"></circle>
+        <path d="m20 20-3.5-3.5"></path>
+      </svg>
+      <span class="top-search__texto">Buscar</span>
+      <kbd>Ctrl K</kbd>
+    </button>
     <div class="user">
       <span class="avatar" data-user-avatar aria-hidden="true"></span>
       <div class="who">
@@ -312,6 +321,7 @@ export async function initChrome({ active = '' } = {}) {
 
   conectarEventosSesion();
   montarShell(usuario, active);
+  initBusquedaGlobal(usuario);
 
   if (!chromeGlobalListo) {
     chromeGlobalListo = true;

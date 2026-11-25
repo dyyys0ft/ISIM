@@ -71,7 +71,8 @@ try {
 
     await p.goto(`${entorno.base}/pacientes.html`, { waitUntil: 'domcontentloaded' });
     await p.waitForSelector('#lista .patient-card');
-    await p.type('#buscar-apellido', apellido);
+    await p.waitForSelector('#buscar-paciente');
+    await p.type('#buscar-paciente', apellido);
     await p.waitForFunction(
       () => document.querySelectorAll('#lista .patient-card').length === 2,
       { timeout: 20000 }

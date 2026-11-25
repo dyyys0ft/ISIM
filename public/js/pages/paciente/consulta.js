@@ -260,8 +260,8 @@ async function verFormulario(contenedor, historia, ctx) {
           area('indicaciones', 'Indicaciones generales / educación a la paciente', d.indicaciones, { filas: 3 }) +
           campo('proxima_cita', 'Próxima cita / control', d.proxima_cita, { tipo: 'date' })
       )}
-      <div class="row" style="position:sticky;bottom:0;background:var(--bg);padding:12px 0;border-top:1px solid var(--line)">
-        <span class="small muted grow">Al firmar, la consulta queda cerrada y ya no se puede modificar.</span>
+      <div class="row form-acciones-fijas">
+        <span class="small muted grow">Al firmar, la consulta queda cerrada. <span id="consulta-estado-guardado" class="estado-guardado" role="status" aria-live="polite"></span></span>
         ${editable ? '<button class="btn" type="button" id="guardar-borrador">Guardar borrador</button><button class="btn ok" type="button" id="firmar-consulta">Firmar y cerrar consulta</button>' : ''}
       </div>
     </form>`;
@@ -355,39 +355,137 @@ async function verFormulario(contenedor, historia, ctx) {
     return datos;
   }
 
-  async function guardar() {
+  const estadoGuardado = $('#consulta-estado-guardado', formulario);
+  let cambiosPendientes = false;
+  let ultimoGuardado = JSON.stringify(leerDatos());
+  let autosaveTimer = null;
+  let guardando = false;
+
+  function pintarEstadoGuardado(texto, tipo = '') {
+    if (!estadoGuardado) return;
+    estadoGuardado.textContent = texto;
+    estadoGuardado.classList.toggle('estado-guardado--ok', tipo === 'ok');
+    estadoGuardado.classList.toggle('estado-guardado--pendiente', tipo === 'pendiente');
+  }
+
+  function marcarCambios() {
+    if (guardando) return;
+    cambiosPendientes = true;
+    pintarEstadoGuardado('· Cambios sin guardar', 'pendiente');
+  }
+
+  async function guardar({ requerirDiagnostico = true, silencioso = false } = {}) {
     const datos = leerDatos();
     if (!datos.motivo) {
-      error.hidden = false;
-      error.textContent = 'El motivo de consulta es obligatorio.';
-      formulario.elements.motivo?.focus();
+      if (!silencioso) {
+        error.hidden = false;
+        error.textContent = 'El motivo de consulta es obligatorio.';
+        formulario.elements.motivo?.focus();
+      }
       throw new Error('Motivo obligatorio');
     }
-    if (!diagnosticos.length) {
-      error.hidden = false;
-      error.textContent = 'Registra al menos un diagnóstico (puede ser presuntivo).';
+    if (requerirDiagnostico && !diagnosticos.length) {
+      if (!silencioso) {
+        error.hidden = false;
+        error.textContent = 'Registra al menos un diagnóstico (puede ser presuntivo).';
+      }
       throw new Error('Diagnóstico obligatorio');
     }
-    await api.patch(`/api/clinical-records/${encodeURIComponent(historia.id)}`, {
-      datos,
-      motivoConsulta: datos.motivo,
-      diagnostico: diagnosticos.map((x) => `${x.cie || ''} ${x.desc || ''}`.trim()).join('; '),
-      indicaciones: datos.indicaciones,
-      recomendaciones: datos.plan,
-    });
-    return datos;
+
+    guardando = true;
+    try {
+      await api.patch(`/api/clinical-records/${encodeURIComponent(historia.id)}`, {
+        datos,
+        motivoConsulta: datos.motivo,
+        diagnostico: diagnosticos.map((x) => `${x.cie || ''} ${x.desc || ''}`.trim()).join('; '),
+        indicaciones: datos.indicaciones,
+        recomendaciones: datos.plan,
+      });
+      cambiosPendientes = false;
+      ultimoGuardado = JSON.stringify(datos);
+      pintarEstadoGuardado(
+        `· Guardado ${new Date().toLocaleTimeString('es-EC', {
+          hour: '2-digit',
+          minute: '2-digit',
+        })}`,
+        'ok'
+      );
+      return datos;
+    } finally {
+      guardando = false;
+    }
   }
+
+  async function autoguardar() {
+    if (!formulario.isConnected || !cambiosPendientes || guardando) return;
+    const datos = leerDatos();
+    if (!datos.motivo || JSON.stringify(datos) === ultimoGuardado) return;
+    try {
+      await guardar({ requerirDiagnostico: false, silencioso: true });
+    } catch {
+      pintarEstadoGuardado('· No se pudo autoguardar', 'pendiente');
+    }
+  }
+
+  function programarAutoguardado() {
+    autosaveTimer = setTimeout(async () => {
+      await autoguardar();
+      if (formulario.isConnected) programarAutoguardado();
+    }, 60000);
+  }
+
+  formulario.addEventListener('input', marcarCambios);
+  formulario.addEventListener('change', marcarCambios);
+  programarAutoguardado();
+
+  const controlador = new AbortController();
+  const observador = new MutationObserver(() => {
+    if (formulario.isConnected) return;
+    clearTimeout(autosaveTimer);
+    controlador.abort();
+    observador.disconnect();
+  });
+  observador.observe(contenedor, { childList: true, subtree: true });
+
+  document.addEventListener(
+    'visibilitychange',
+    () => {
+      if (document.hidden) autoguardar();
+    },
+    { signal: controlador.signal }
+  );
+
+  window.addEventListener(
+    'beforeunload',
+    (evento) => {
+      if (!cambiosPendientes || !formulario.isConnected) return;
+      evento.preventDefault();
+      evento.returnValue = '';
+    },
+    { signal: controlador.signal }
+  );
+
+  document.addEventListener(
+    'keydown',
+    (evento) => {
+      const esGuardar = (evento.ctrlKey || evento.metaKey) && evento.key.toLowerCase() === 's';
+      if (!esGuardar || !formulario.isConnected) return;
+      evento.preventDefault();
+      $('#guardar-borrador', formulario)?.click();
+    },
+    { signal: controlador.signal }
+  );
 
   $('#guardar-borrador', formulario)?.addEventListener('click', async (evento) => {
     const boton = evento.currentTarget;
     boton.disabled = true;
     boton.textContent = 'Guardando…';
     try {
-      await guardar();
+      await guardar({ requerirDiagnostico: false });
       toast('Borrador guardado');
       await ctx.recargar();
     } catch (fallo) {
-      if (fallo.message !== 'Motivo obligatorio' && fallo.message !== 'Diagnóstico obligatorio') {
+      if (fallo.message !== 'Motivo obligatorio') {
         error.hidden = false;
         error.textContent = fallo.message;
         toast(fallo.message, 'error');

@@ -65,9 +65,11 @@ async function cargar(pagina = paginaActual) {
     limit: String(LIMITE_PAGINA),
     orden: ordenActual,
   });
+  const q = $('#buscar-paciente').value.trim();
   const nombre = $('#buscar-nombre').value.trim();
   const apellido = $('#buscar-apellido').value.trim();
   const cedula = $('#buscar-cedula').value.trim();
+  if (q) params.set('q', q);
   if (nombre) params.set('nombre', nombre);
   if (apellido) params.set('apellido', apellido);
   if (cedula) params.set('cedula', cedula);
@@ -336,6 +338,8 @@ async function abrirDocumentosPaciente(paciente) {
 function abrirFormulario() {
   const formulario = $('#form-paciente');
   formulario.reset();
+  const masDatos = $('#p-mas-datos');
+  if (masDatos) masDatos.open = false;
 
   $('#titulo-paciente').textContent = 'Nuevo paciente';
   $('#btn-guardar-paciente').textContent = 'Registrar paciente';
@@ -428,7 +432,12 @@ function conectarEventos() {
     cargar(1);
   });
 
-  for (const selector of ['#buscar-nombre', '#buscar-apellido', '#buscar-cedula']) {
+  for (const selector of [
+    '#buscar-paciente',
+    '#buscar-nombre',
+    '#buscar-apellido',
+    '#buscar-cedula',
+  ]) {
     $(selector).addEventListener('input', () => {
       clearTimeout(temporizador);
       temporizador = setTimeout(() => cargar(1), 260);
@@ -436,6 +445,7 @@ function conectarEventos() {
   }
 
   $('#btn-limpiar-busqueda').addEventListener('click', () => {
+    $('#buscar-paciente').value = '';
     $('#buscar-nombre').value = '';
     $('#buscar-apellido').value = '';
     $('#buscar-cedula').value = '';
@@ -470,6 +480,8 @@ function conectarEventos() {
 
   $('#dlg-paciente').addEventListener('close', () => {
     $('#bloque-representantes').hidden = true;
+    const masDatos = $('#p-mas-datos');
+    if (masDatos) masDatos.open = false;
   });
 }
 
@@ -480,7 +492,16 @@ async function init() {
   conectarEventos();
   aplicarColumnas();
   pintarOrden();
+
+  const parametros = new URLSearchParams(location.search);
+  const qInicial = parametros.get('q');
+  if (qInicial) $('#buscar-paciente').value = qInicial;
+
   await cargar();
+
+  if (parametros.get('nuevo') === '1' && puede(usuarioActual, 'pacientes.crear')) {
+    abrirFormulario(null);
+  }
 }
 
 init();

@@ -1,5 +1,5 @@
 import { api } from '../../api.js';
-import { $, $$, escapeHtml, fmtFecha, toast } from '../../ui.js';
+import { $, $$, escapeHtml, fmtFecha, protegerCambios, toast } from '../../ui.js';
 import { mascararTelefono, mascararEmail, iconoOjo } from '../../privacidad.js';
 import { abrirSelectorConsentimiento } from '../../lopdp.js';
 
@@ -274,13 +274,14 @@ export const tab = {
             </div>
           </div>
         </section>
-        <div class="row">
+        <div class="row form-acciones-fijas">
           <span class="muted small grow">Los cambios quedan registrados en la bitácora de actividad (LOPDP).</span>
           ${soloLectura ? '' : '<button class="btn pri" type="submit">Guardar cambios</button>'}
         </div>
       </form>`;
 
     const formulario = $('#form-datos', contenedor);
+    const marcarLimpio = protegerCambios(formulario);
     const error = $('#error-datos', formulario);
     const contactoForm = formulario.querySelector('[data-contacto-form]');
     const botonContacto = contactoForm?.querySelector('[data-revelar-contacto-form]');
@@ -411,6 +412,7 @@ export const tab = {
       }
       try {
         await api.patch(`/api/patients/${encodeURIComponent(P.id)}`, datos);
+        marcarLimpio();
         toast('Datos guardados correctamente');
         await ctx.recargar();
       } catch (fallo) {

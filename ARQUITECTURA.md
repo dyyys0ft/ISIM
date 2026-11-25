@@ -1468,3 +1468,47 @@ La configuración vive en **Ajustes → Red / Acceso** y consta de dos partes.
   verificadas.
 - **Capturas:** 57 reporte de ADMIN con acciones esperadas y 58 reporte de
   Recepción.
+
+## 33. Creación rápida y experiencia móvil (31/31)
+
+- **Búsqueda global:** botón en la cabecera y atajo `Ctrl+K`. Busca pacientes por
+  nombre o cédula y ofrece acciones directas para abrir la ficha, crear una cita,
+  crear un consentimiento o registrar una paciente. Incluye navegación con
+  flechas y `Enter`.
+- **Barra móvil:** Agenda, Cita, Paciente y Buscar siempre a un toque. Se oculta
+  en la ficha, el documento, la firma y la impresión para no chocar con el
+  guardado fijo.
+- **Alta rápida de paciente:** el modal muestra solo los datos mínimos y agrupa
+  correo, dirección, ocupación, estado civil, ciudad, alergias y notas en
+  **Más datos (opcional)**. Los representantes se abren solos si la paciente es
+  menor.
+- **Búsqueda única:** un solo campo busca por nombre, apellido o cédula con
+  resultados mientras se escribe. Los filtros anteriores quedan en
+  **Filtros avanzados**.
+- **Ficha móvil:** pestañas con etiquetas cortas, desplazamiento con degradado
+  en los bordes y centrado de la pestaña activa. La nota importante vacía se
+  reduce a una línea. Datos de la paciente y Receta mantienen una barra de
+  guardado fija al fondo.
+- **Autoguardado:** la consulta guarda un borrador cada 60 segundos si hay
+  cambios, al ocultar la pestaña y con `Ctrl+S`. El borrador ya no exige un
+  diagnóstico; firmar sí lo exige. Datos de la paciente y Receta avisan antes de
+  salir con cambios sin guardar.
+- **Consentimientos:** se preselecciona la plantilla de consentimiento, el
+  título se completa desde la plantilla y se prefiere un médico con firma. El
+  botón **Crear y firmar** abre la sesión de firma en el mismo clic y la lista
+  permite **Firmar** documentos pendientes sin entrar al detalle.
+- **Recetas:** botón **Repetir última receta** para copiar medicamentos,
+  diagnóstico, CIE, alergias y recomendaciones de la última receta no anulada.
+- **Fuentes:** Poppins 300/400/500/600 se sirve desde `/fonts` con
+  `font-display: swap` y licencia OFL. Se eliminaron las 46 referencias a Google
+  Fonts de las 23 páginas; no hay peticiones a CDN externos.
+- **Base de datos:** sin migración ni columnas nuevas. Producción conserva
+  **20.049 pacientes**, `foreign_key_check` en 0 y 832 eventos de auditoría.
+- **Pruebas:** **31/31 E2E OK**. Nuevas `e2e-ux-creacion-rapida.mjs` y
+  `e2e-ux-movil.mjs`; se actualizó `e2e-paciente-privacidad.mjs` para la
+  búsqueda única.
+- **Producción:** respaldo `sgcpm-antes-ux-rapida-1795622690012.db`, build
+  `1.9.0-mwwbx0lg`, PID 28884.
+- **Capturas:** 33 búsqueda global, 34 alta rápida, 35 consentimiento, 35b lista
+  con firma directa, 36 repetir receta, 37 barra móvil, 38 ficha móvil y 39
+  receta móvil.

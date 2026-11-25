@@ -1,11 +1,18 @@
 import { api } from '../../api.js';
-import { $, $$, escapeHtml, fmtFecha, toast, confirmar } from '../../ui.js';
+import { $, $$, escapeHtml, fmtFecha, protegerCambios, toast, confirmar } from '../../ui.js';
 
 function campo(nombre, etiqueta, valor, opciones = {}) {
   const { clase = '', tipo = 'text', placeholder = '', extra = '' } = opciones;
   return `<label class="f ${clase}"><span>${escapeHtml(etiqueta)}</span>
     <input class="input" name="${nombre}" type="${tipo}" value="${escapeHtml(valor ?? '')}"
       ${placeholder ? `placeholder="${escapeHtml(placeholder)}"` : ''} ${extra} /></label>`;
+}
+
+function fechaReceta(fecha) {
+  const valor = String(fecha || '').slice(0, 10);
+  return fmtFecha(
+    /^\d{4}-\d{2}-\d{2}$/.test(valor) ? `${valor}T12:00:00` : fecha
+  );
 }
 
 function itemVacio() {
@@ -66,6 +73,7 @@ export const tab = {
     const items = Array.isArray(receta.items) ? receta.items.map((x) => ({ ...itemVacio(), ...x })) : [];
     const editable = ctx.puede('historias.gestionar');
     const hoy = new Date().toLocaleDateString('en-CA');
+    const ultimaReceta = previas.find((r) => !r.anulada);
 
     contenedor.innerHTML = `
       <div class="ficha-split">
@@ -79,7 +87,7 @@ export const tab = {
               ? previas
                   .map(
                     (r) => `<div class="row" style="margin-top:8px">
-                      <span class="grow small">N.º ${escapeHtml(r.numero)} · ${escapeHtml(fmtFecha(r.fecha))} — ${escapeHtml(r.medicamentosTexto || 'sin medicamentos')}
+                      <span class="grow small">N.º ${escapeHtml(r.numero)} · ${escapeHtml(fechaReceta(r.fecha))} — ${escapeHtml(r.medicamentosTexto || 'sin medicamentos')}
                         ${r.anulada ? '<span class="badge badge--red">ANULADA</span>' : ''}</span>
                       <a class="btn btn--sm" href="/receta.html?id=${encodeURIComponent(r.id)}">Ver</a>
                       ${!r.anulada && editable ? `<button class="btn btn--sm danger" type="button" data-anular="${encodeURIComponent(r.id)}">Anular</button>` : ''}
@@ -104,7 +112,13 @@ export const tab = {
                   </select></label>
                 <label class="chk span2" style="align-self:end"><input type="checkbox" name="para_pareja"${datos.para_pareja ? ' checked' : ''} />
                   <span>Tratamiento exclusivo para la <b>pareja</b> (receta complementaria)</span></label>
-              </div></section>
+              </div>
+              ${
+                editable && ultimaReceta
+                  ? `<div class="row" style="margin-top:8px"><button class="btn btn--sm" type="button" id="rx-repetir">Repetir última receta</button><span class="small muted">N.° ${escapeHtml(ultimaReceta.numero)} · ${escapeHtml(fechaReceta(ultimaReceta.fecha))}</span></div>`
+                  : ''
+              }
+            </section>
             <section class="sec"><h3><span class="n">2</span>Prescripción</h3>
               <div class="b stack">
                 <div id="rx-items"></div>
@@ -116,7 +130,7 @@ export const tab = {
               </div></section>
             <section class="sec"><h3><span class="n">3</span>Recomendaciones</h3>
               <div class="b"><textarea class="textarea" name="recomendaciones" rows="3" maxlength="3000" placeholder="Una recomendación por línea">${escapeHtml(datos.recomendaciones || receta.recomendaciones || '')}</textarea></div></section>
-            <div class="row">
+            <div class="row form-acciones-fijas">
               <span class="small muted grow">La receta incluye nombre genérico (DCI), cantidad en número y letras, indicaciones, firma y registro profesional.</span>
               ${editable ? '<button class="btn pri" type="submit">Guardar e imprimir receta</button>' : ''}
             </div>
@@ -125,6 +139,7 @@ export const tab = {
       </div>`;
 
     const formulario = $('#form-receta', contenedor);
+    const marcarLimpio = protegerCambios(formulario);
     const error = $('#error-receta', formulario);
     if (!editable) {
       for (const control of $$('input, select, textarea', formulario)) control.disabled = true;
@@ -166,6 +181,49 @@ export const tab = {
     $('#rx-libre', formulario)?.addEventListener('click', () => {
       items.push(itemVacio());
       dibujarItems();
+    });
+
+    $('#rx-repetir', formulario)?.addEventListener('click', async () => {
+      if (!ultimaReceta) return;
+      if (
+        items.length &&
+        !(await confirmar(
+          'La receta actual tiene medicamentos. ¿Reemplazarlos por los de la última receta?',
+          { titulo: 'Repetir última receta', textoAceptar: 'Reemplazar' }
+        ))
+      ) {
+        return;
+      }
+      try {
+        const detalle = await api.get(
+          `/api/prescriptions/${encodeURIComponent(ultimaReceta.id)}`
+        );
+        const datosUltima = detalle.datos || {};
+        const asignar = (nombre, valor) => {
+          const control = formulario.querySelector(`[name="${nombre}"]`);
+          if (control) control.value = valor || '';
+        };
+        asignar('diagnostico', datosUltima.diagnostico || detalle.diagnostico || '');
+        asignar('cie', datosUltima.cie || detalle.cie10 || '');
+        asignar(
+          'alergias',
+          datosUltima.alergias || detalle.alergias || ctx.paciente.alergias || ''
+        );
+        asignar(
+          'recomendaciones',
+          datosUltima.recomendaciones || detalle.recomendaciones || ''
+        );
+        items.splice(
+          0,
+          items.length,
+          ...(detalle.items || []).map((item) => ({ ...itemVacio(), ...item }))
+        );
+        dibujarItems();
+        formulario.dispatchEvent(new Event('input', { bubbles: true }));
+        toast('Última receta cargada');
+      } catch (fallo) {
+        toast(fallo.message, 'error');
+      }
     });
 
     let temporizador = null;
@@ -267,6 +325,7 @@ export const tab = {
           recomendaciones: datos.recomendaciones,
           paraPareja: datos.para_pareja,
         });
+        marcarLimpio();
         toast('Receta guardada en la historia clínica');
         const id = respuesta?.id || receta.id;
         if (id) window.open(`/receta.html?id=${encodeURIComponent(id)}`, '_blank');

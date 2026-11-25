@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#003f93" />
     <title>ISIM · Pacientes</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/css/isim.css" />
   </head>
   <body>
@@ -84,40 +81,51 @@
         </button>
       </section>
 
-      <section class="card patient-filters">
+      <search class="card patient-filters patient-search">
         <form id="form-filtros-pacientes">
-          <div class="patient-filters__head">
-            <div>
-              <h2 class="side-title">Filtros de búsqueda</h2>
-              <p class="hint">
-                Busca por nombre, apellido o cédula. Puedes combinar los filtros.
-              </p>
-            </div>
-          </div>
-
-          <div class="patient-filters__grid">
-            <div class="field">
-              <label for="buscar-nombre">Nombre</label>
-              <input class="input" id="buscar-nombre" type="search" placeholder="Ej. María" />
-            </div>
-            <div class="field">
-              <label for="buscar-apellido">Apellido</label>
-              <input class="input" id="buscar-apellido" type="search" placeholder="Ej. Guamán" />
-            </div>
-            <div class="field">
-              <label for="buscar-cedula">Cédula</label>
-              <input class="input" id="buscar-cedula" type="search" placeholder="Número de cédula" />
-            </div>
-          </div>
-
-          <div class="patient-filters__actions">
-            <button class="btn btn--primary" type="submit">Buscar</button>
+          <div class="patient-search__row">
+            <label class="search patient-search__input">
+              <span class="sr-only">Buscar paciente</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-3.5-3.5"></path>
+              </svg>
+              <input
+                class="input"
+                id="buscar-paciente"
+                type="search"
+                placeholder="Nombre, apellido o cédula…"
+                autocomplete="off"
+                autocapitalize="none"
+                spellcheck="false"
+              />
+            </label>
+            <button class="btn btn--primary patient-search__buscar" type="submit">Buscar</button>
             <button class="btn btn--ghost" id="btn-limpiar-busqueda" type="button">
-              Limpiar filtros
+              Limpiar
             </button>
           </div>
+
+          <details class="patient-search__avanzados" id="filtros-avanzados-pacientes">
+            <summary>Filtros avanzados</summary>
+            <p class="hint">Combina nombre, apellido y cédula si necesitas afinar la búsqueda.</p>
+            <div class="patient-filters__grid">
+              <div class="field">
+                <label for="buscar-nombre">Nombre</label>
+                <input class="input" id="buscar-nombre" type="search" placeholder="Ej. María" />
+              </div>
+              <div class="field">
+                <label for="buscar-apellido">Apellido</label>
+                <input class="input" id="buscar-apellido" type="search" placeholder="Ej. Guamán" />
+              </div>
+              <div class="field">
+                <label for="buscar-cedula">Cédula</label>
+                <input class="input" id="buscar-cedula" type="search" placeholder="Número de cédula" />
+              </div>
+            </div>
+          </details>
         </form>
-      </section>
+      </search>
 
       <div class="patient-results-bar">
         <div class="patient-results-bar__left">
@@ -199,47 +207,50 @@
               <label for="p-telefono">Teléfono</label>
               <input class="input" id="p-telefono" maxlength="30" />
             </div>
-            <div class="field">
-              <label for="p-email">Correo electrónico</label>
-              <input class="input" id="p-email" type="email" maxlength="120" />
-            </div>
-            <div class="field">
-              <label for="p-direccion">Dirección</label>
-              <input class="input" id="p-direccion" maxlength="200" />
-            </div>
-            <div class="field">
-              <label for="p-ocupacion">Ocupación</label>
-              <input class="input" id="p-ocupacion" maxlength="120" />
-            </div>
-            <div class="field">
-              <label for="p-estado-civil">Estado civil</label>
-              <select class="select" id="p-estado-civil">
-                <option value="">Sin especificar</option>
-                <option value="Soltera/o">Soltera/o</option>
-                <option value="Casada/o">Casada/o</option>
-                <option value="Unión libre">Unión libre</option>
-                <option value="Divorciada/o">Divorciada/o</option>
-                <option value="Viuda/o">Viuda/o</option>
-                <option value="Otro">Otro</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="p-ciudad">Ciudad</label>
-              <input class="input" id="p-ciudad" maxlength="120" />
-            </div>
-            <div class="field">
-              <label for="p-fecha-registro">Última actualización de datos</label>
-              <input class="input" id="p-fecha-registro" type="date" disabled />
-            </div>
           </div>
-          <div class="field">
-            <label for="p-alergias">Alergias</label>
-            <input class="input" id="p-alergias" maxlength="500" placeholder="Penicilina, látex…" />
-          </div>
-          <div class="field">
-            <label for="p-notas">Notas</label>
-            <textarea class="textarea" id="p-notas" maxlength="1000" style="min-height: 90px"></textarea>
-          </div>
+
+          <details class="paciente-mas-datos" id="p-mas-datos">
+            <summary>Más datos (opcional)</summary>
+            <p class="hint">Puedes completar estos datos ahora o después desde la ficha.</p>
+            <div class="form-grid">
+              <div class="field">
+                <label for="p-email">Correo electrónico</label>
+                <input class="input" id="p-email" type="email" maxlength="120" />
+              </div>
+              <div class="field">
+                <label for="p-direccion">Dirección</label>
+                <input class="input" id="p-direccion" maxlength="200" />
+              </div>
+              <div class="field">
+                <label for="p-ocupacion">Ocupación</label>
+                <input class="input" id="p-ocupacion" maxlength="120" />
+              </div>
+              <div class="field">
+                <label for="p-estado-civil">Estado civil</label>
+                <select class="select" id="p-estado-civil">
+                  <option value="">Sin especificar</option>
+                  <option value="Soltera/o">Soltera/o</option>
+                  <option value="Casada/o">Casada/o</option>
+                  <option value="Unión libre">Unión libre</option>
+                  <option value="Divorciada/o">Divorciada/o</option>
+                  <option value="Viuda/o">Viuda/o</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="p-ciudad">Ciudad</label>
+                <input class="input" id="p-ciudad" maxlength="120" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="p-alergias">Alergias</label>
+              <input class="input" id="p-alergias" maxlength="500" placeholder="Penicilina, látex…" />
+            </div>
+            <div class="field">
+              <label for="p-notas">Notas</label>
+              <textarea class="textarea" id="p-notas" maxlength="1000" style="min-height: 90px"></textarea>
+            </div>
+          </details>
 
           <section class="representantes" id="bloque-representantes" hidden>
             <div>
