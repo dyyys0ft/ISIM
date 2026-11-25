@@ -255,7 +255,7 @@ async function buscar(consulta) {
   resultados.innerHTML = `${base}${buscarEnPacientes}<div class="cmd__cargando">Buscando pacientes…</div>`;
   try {
     const pacientes = await api.get(
-      `/api/patients?q=${encodeURIComponent(q)}&limit=8`
+      `/api/patients/search?q=${encodeURIComponent(q)}&limit=8`
     );
     if (actual !== secuencia || !dialogo?.open) return;
     resultados.innerHTML = `${base}${renderPacientes(pacientes, q)}${buscarEnPacientes}`;

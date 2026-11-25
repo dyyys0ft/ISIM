@@ -158,7 +158,7 @@ async function main() {
     paciente.cedula.slice(-6),
   ]) {
     const encontrados = await adminApi(
-      `/api/patients?q=${encodeURIComponent(consulta)}&limit=20`
+      `/api/patients/search?q=${encodeURIComponent(consulta)}&limit=20`
     );
     assert.ok(
       encontrados.some((fila) => fila.id === creada.id),
@@ -166,7 +166,7 @@ async function main() {
     );
   }
   for (const comodin of ['%', '_']) {
-    const encontrados = await adminApi(`/api/patients?q=${encodeURIComponent(comodin)}&limit=20`);
+    const encontrados = await adminApi(`/api/patients/search?q=${encodeURIComponent(comodin)}&limit=20`);
     assert.equal(
       encontrados.length,
       0,

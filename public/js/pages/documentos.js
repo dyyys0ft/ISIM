@@ -82,22 +82,40 @@ function render(documentos) {
     .join('');
 }
 
-function seleccionarPaciente(paciente) {
-  pacienteSeleccionado = paciente;
-  $('#nuevo-paciente').value = paciente.id;
-  $('#nuevo-paciente-busqueda').value = `${paciente.apellidos} ${paciente.nombres} — ${paciente.cedula}`;
-
-  if (paciente.es_menor) {
-    const representante = paciente.representantes?.[0];
-    $('#paciente-seleccionado').textContent = representante
-      ? `Menor de edad. Firmará su representante legal: ${representante.nombre} · C.I. ${representante.cedula}`
-      : 'Menor de edad. Registra al representante legal en Pacientes antes de crear el consentimiento.';
-  } else {
-    $('#paciente-seleccionado').textContent = `Seleccionada: ${paciente.nombres} ${paciente.apellidos}`;
-  }
+async function seleccionarPaciente(pacienteResumen) {
+  if (!pacienteResumen?.id) return;
+  pacienteSeleccionado = pacienteResumen;
+  $('#nuevo-paciente').value = pacienteResumen.id;
+  $('#nuevo-paciente-busqueda').value = `${pacienteResumen.apellidos || ''} ${
+    pacienteResumen.nombres || ''
+  } — ${pacienteResumen.cedula || ''}`;
+  $('#paciente-seleccionado').textContent = `Seleccionada: ${
+    pacienteResumen.nombres || ''
+  } ${pacienteResumen.apellidos || ''}`;
 
   $('#resultados-pacientes').hidden = true;
   $('#resultados-pacientes').replaceChildren();
+
+  // El buscador devuelve un DTO mínimo; el detalle autorizado aporta el
+  // representante legal necesario para consentimientos de menores.
+  try {
+    const detalle = await api.get(
+      `/api/patients/${encodeURIComponent(pacienteResumen.id)}`
+    );
+    if ($('#nuevo-paciente').value !== pacienteResumen.id) return;
+    pacienteSeleccionado = detalle;
+    $('#nuevo-paciente-busqueda').value = `${detalle.apellidos} ${detalle.nombres} — ${detalle.cedula}`;
+    if (detalle.es_menor) {
+      const representante = detalle.representantes?.[0];
+      $('#paciente-seleccionado').textContent = representante
+        ? `Menor de edad. Firmará su representante legal: ${representante.nombre} · C.I. ${representante.cedula}`
+        : 'Menor de edad. Registra al representante legal en Pacientes antes de crear el consentimiento.';
+    } else {
+      $('#paciente-seleccionado').textContent = `Seleccionada: ${detalle.nombres} ${detalle.apellidos}`;
+    }
+  } catch {
+    // La selección por ID sigue siendo válida; el backend valida al crear.
+  }
 }
 
 function limpiarPaciente() {
@@ -142,7 +160,7 @@ async function buscarPacientes(q) {
   const secuencia = ++pacientesSeq;
   try {
     const pacientes = await api.get(
-      `/api/patients?q=${encodeURIComponent(q)}&limit=20`
+      `/api/patients/search?q=${encodeURIComponent(q)}&limit=20`
     );
     if (secuencia !== pacientesSeq) return;
     renderResultadosPacientes(pacientes);

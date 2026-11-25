@@ -1680,27 +1680,58 @@ function cambiarVista(vista) {
 }
 
 function limpiarPaciente() {
+  cancelarBusquedaPacientes();
   estadoPagina.pacienteSeleccionado = null;
   $('#cita-paciente').value = '';
   $('#cita-paciente-busqueda').value = '';
   $('#cita-paciente-seleccionado').textContent = 'Escribe al menos 2 letras para buscar.';
-  $('#resultados-pacientes-cita').hidden = true;
-  $('#resultados-pacientes-cita').replaceChildren();
 }
 
-function seleccionarPaciente(paciente) {
-  estadoPagina.pacienteSeleccionado = paciente;
-  $('#cita-paciente').value = paciente.id;
-  $('#cita-paciente-busqueda').value = `${paciente.apellidos} ${paciente.nombres} — ${paciente.cedula}`;
-  $('#cita-paciente-seleccionado').textContent = `Seleccionada: ${paciente.nombres} ${paciente.apellidos}${
-    paciente.alergias ? ` · Alergias: ${paciente.alergias}` : ''
-  }`;
-  $('#resultados-pacientes-cita').hidden = true;
-  $('#resultados-pacientes-cita').replaceChildren();
+/** Invalida cualquier búsqueda en curso y limpia sus resultados visibles. */
+function cancelarBusquedaPacientes() {
+  estadoPagina.pacientesSeq += 1;
+  clearTimeout(estadoPagina.pacientesTimer);
+  const contenedor = $('#resultados-pacientes-cita');
+  if (contenedor) {
+    contenedor.hidden = true;
+    contenedor.replaceChildren();
+  }
+}
+
+async function seleccionarPaciente(pacienteResumen) {
+  if (!pacienteResumen?.id) return;
+  cancelarBusquedaPacientes();
+  estadoPagina.pacienteSeleccionado = pacienteResumen;
+  $('#cita-paciente').value = pacienteResumen.id;
+  $('#cita-paciente-busqueda').value = `${pacienteResumen.apellidos || ''} ${
+    pacienteResumen.nombres || ''
+  } — ${pacienteResumen.cedula || ''}`;
+  $('#cita-paciente-seleccionado').textContent = `Seleccionada: ${
+    pacienteResumen.nombres || ''
+  } ${pacienteResumen.apellidos || ''}`;
   $('#cita-nueva-paciente').hidden = true;
   $('#cita-menor-aviso').hidden = !(
-    paciente.es_menor || esMenorFecha(paciente.fecha_nacimiento)
+    pacienteResumen.es_menor || esMenorFecha(pacienteResumen.fecha_nacimiento)
   );
+
+  // El resumen de búsqueda es mínimo; el detalle autorizado completa alergias,
+  // fecha de nacimiento y estado de evidencia para el resto del flujo.
+  try {
+    const detalle = await api.get(
+      `/api/patients/${encodeURIComponent(pacienteResumen.id)}`
+    );
+    if ($('#cita-paciente').value !== pacienteResumen.id) return;
+    estadoPagina.pacienteSeleccionado = detalle;
+    $('#cita-paciente-busqueda').value = `${detalle.apellidos} ${detalle.nombres} — ${detalle.cedula}`;
+    $('#cita-paciente-seleccionado').textContent = `Seleccionada: ${detalle.nombres} ${
+      detalle.apellidos
+    }${detalle.alergias ? ` · Alergias: ${detalle.alergias}` : ''}`;
+    $('#cita-menor-aviso').hidden = !(
+      detalle.es_menor || esMenorFecha(detalle.fecha_nacimiento)
+    );
+  } catch {
+    // La selección por ID sigue siendo válida; el backend valida al guardar.
+  }
 }
 
 function renderResultadosPacientes(pacientes) {
@@ -1728,16 +1759,19 @@ function renderResultadosPacientes(pacientes) {
   }
 }
 
-async function buscarPacientes(q) {
+async function buscarPacientes(q, secuencia = estadoPagina.pacientesSeq) {
   if (q.length < 2) {
-    $('#resultados-pacientes-cita').hidden = true;
+    cancelarBusquedaPacientes();
     return;
   }
+  if (secuencia !== estadoPagina.pacientesSeq) return;
 
-  const secuencia = ++estadoPagina.pacientesSeq;
   try {
-    const pacientes = await api.get(`/api/patients?q=${encodeURIComponent(q)}&limit=20`);
+    const pacientes = await api.get(
+      `/api/patients/search?q=${encodeURIComponent(q)}&limit=20`
+    );
     if (secuencia !== estadoPagina.pacientesSeq) return;
+    if ($('#cita-paciente-busqueda').value.trim() !== q) return;
     renderResultadosPacientes(pacientes);
   } catch (error) {
     if (secuencia !== estadoPagina.pacientesSeq) return;
@@ -1925,7 +1959,7 @@ async function guardarCita(evento) {
     // y se resuelve con la evidencia firmada, no con la marca de consentimiento.
     if (!id) {
       let pacienteParaAviso = pacienteNuevo || estadoPagina.pacienteSeleccionado;
-      if (!pacienteParaAviso && patientId) {
+      if (!pacienteNuevo && patientId && !pacienteParaAviso?.consentimientoEstado) {
         pacienteParaAviso = await api
           .get(`/api/patients/${encodeURIComponent(patientId)}`)
           .catch(() => null);
@@ -1972,9 +2006,10 @@ function conectarEventos() {
   $('#aviso-lopdp-cerrar')?.addEventListener('click', () => ocultarAvisoLopdp());
 
   $('#btn-paciente-nueva').addEventListener('click', () => {
+    cancelarBusquedaPacientes();
+    estadoPagina.pacienteSeleccionado = null;
     $('#cita-paciente').value = '';
     $('#cita-paciente-busqueda').value = '';
-    $('#resultados-pacientes-cita').hidden = true;
     $('#cita-paciente-seleccionado').textContent =
       'Paciente nueva: completa los datos de admisión.';
     $('#cita-nueva-paciente').hidden = false;
@@ -2107,9 +2142,11 @@ function conectarEventos() {
     estadoPagina.pacienteSeleccionado = null;
     $('#cita-paciente').value = '';
     $('#cita-paciente-seleccionado').textContent = 'Escribe al menos 2 letras para buscar.';
+    cancelarBusquedaPacientes();
     const q = $('#cita-paciente-busqueda').value.trim();
-    clearTimeout(estadoPagina.pacientesTimer);
-    estadoPagina.pacientesTimer = setTimeout(() => buscarPacientes(q), 260);
+    if (q.length < 2) return;
+    const secuencia = estadoPagina.pacientesSeq;
+    estadoPagina.pacientesTimer = setTimeout(() => buscarPacientes(q, secuencia), 260);
   });
 
   document.addEventListener('click', cerrarResultadosCita);

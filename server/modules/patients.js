@@ -344,6 +344,33 @@ export function routes(router) {
     return { items, total, incompletos, sinConsentimiento, sinEvidencia, page, pages, limit };
   });
 
+  // Búsqueda de selección: DTO mínimo para autocompletes. No expone contacto,
+  // antecedentes, medicación, representantes ni estado clínico. Quien necesite
+  // más datos debe pedir el detalle autorizado de la paciente.
+  router.get('/api/patients/search', (ctx) => {
+    const user = requireUser(ctx);
+    exigir(user, PERMISOS.PACIENTES_VER);
+    const filtro = construirFiltroPacientes(ctx.url.searchParams);
+    const limit = Math.min(
+      Math.max(Number(ctx.url.searchParams.get('limit') || 20), 1),
+      50
+    );
+    return db
+      .prepare(
+        `SELECT id, nombres, apellidos, cedula, fecha_nacimiento
+         FROM patients
+         WHERE activo = 1
+           ${filtro.sql}
+         ORDER BY apellidos COLLATE NOCASE, nombres COLLATE NOCASE
+         LIMIT ?`
+      )
+      .all(...filtro.valores, limit)
+      .map((fila) => ({
+        ...fila,
+        es_menor: esMenorDeEdad(fila.fecha_nacimiento),
+      }));
+  });
+
   router.get('/api/patients/:id', (ctx) => {
     const user = requireUser(ctx);
     exigir(user, PERMISOS.PACIENTES_VER);
