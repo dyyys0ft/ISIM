@@ -10998,8 +10998,21 @@ body.isim-shell .app-header { display: none !important; }
 .alerta-lopdp .btn {
   margin-left: auto;
 }
+.alerta-lopdp__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+.alerta-lopdp__acciones .btn {
+  margin-left: 0;
+}
 @media (max-width: 700px) {
   .alerta-lopdp .btn {
+    width: 100%;
+    margin-left: 0;
+  }
+  .alerta-lopdp__acciones {
     width: 100%;
     margin-left: 0;
   }

@@ -151,8 +151,20 @@ function conDatosCalculados(paciente) {
     consentimiento_evidencia_hash,
     ...datos
   } = paciente;
+  const tieneMarca = Boolean(String(paciente.consentimiento_datos ?? '').trim());
+  const tieneEvidencia = Boolean(String(consentimiento_evidencia_path ?? '').trim());
   return {
     ...datos,
+    consentimientoEstado: {
+      marca: tieneMarca,
+      evidencia: tieneEvidencia,
+      pendienteEvidencia: !tieneEvidencia,
+      estado: tieneEvidencia
+        ? 'con_evidencia'
+        : tieneMarca
+          ? 'pendiente_evidencia'
+          : 'sin_marca',
+    },
     consentimientoEvidencia: consentimiento_evidencia_path
       ? {
           nombre: paciente.consentimiento_evidencia_nombre || 'Evidencia firmada',
@@ -197,6 +209,7 @@ function construirFiltroPacientes(params) {
   const apellido = limpiar(params.get('apellido'), 80);
   const cedula = limpiar(params.get('cedula'), 30);
   const sinConsentimiento = params.get('sinConsentimiento') === '1';
+  const sinEvidencia = params.get('sinEvidencia') === '1';
   const condiciones = [];
   const valores = [];
 
@@ -226,6 +239,11 @@ function construirFiltroPacientes(params) {
   if (sinConsentimiento) {
     condiciones.push(
       "(consentimiento_datos IS NULL OR TRIM(consentimiento_datos) = '')"
+    );
+  }
+  if (sinEvidencia) {
+    condiciones.push(
+      "(consentimiento_evidencia_path IS NULL OR TRIM(consentimiento_evidencia_path) = '')"
     );
   }
 
@@ -302,6 +320,13 @@ export function routes(router) {
            AND (consentimiento_datos IS NULL OR TRIM(consentimiento_datos) = '')`
       )
       .get().n;
+    const sinEvidencia = db
+      .prepare(
+        `SELECT COUNT(*) AS n FROM patients
+         WHERE activo = 1
+           AND (consentimiento_evidencia_path IS NULL OR TRIM(consentimiento_evidencia_path) = '')`
+      )
+      .get().n;
     const pages = Math.max(1, Math.ceil(total / limit));
     const page = Math.min(Math.max(Number(ctx.url.searchParams.get('page') || 1), 1), pages);
 
@@ -316,7 +341,7 @@ export function routes(router) {
       .all(...filtro.valores, limit, (page - 1) * limit)
       .map(conDatosCalculados);
 
-    return { items, total, incompletos, sinConsentimiento, page, pages, limit };
+    return { items, total, incompletos, sinConsentimiento, sinEvidencia, page, pages, limit };
   });
 
   router.get('/api/patients/:id', (ctx) => {

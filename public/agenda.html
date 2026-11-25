@@ -89,6 +89,38 @@
         </div>
       </section>
 
+      <section
+        class="alerta-lopdp alerta-lopdp--agenda"
+        id="aviso-lopdp-agenda"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        hidden
+      >
+        <span class="alerta-lopdp__icono" aria-hidden="true">⚠</span>
+        <div class="grow">
+          <strong>Evidencia LOPDP pendiente</strong>
+          <p class="small" id="aviso-lopdp-texto"></p>
+        </div>
+        <div class="alerta-lopdp__acciones">
+          <a class="btn btn--sm" id="aviso-lopdp-ficha" href="#">Abrir ficha</a>
+          <button class="btn btn--sm" id="aviso-lopdp-previsualizar" type="button">
+            Previsualizar / imprimir
+          </button>
+          <button class="btn btn--sm btn--primary" id="aviso-lopdp-subir" type="button">
+            Subir evidencia
+          </button>
+          <button
+            class="btn btn--sm btn--ghost"
+            id="aviso-lopdp-cerrar"
+            type="button"
+            aria-label="Ocultar aviso de evidencia LOPDP"
+          >
+            ✕
+          </button>
+        </div>
+      </section>
+
       <div class="toolbar agenda-toolbar">
         <span class="vista-toggle" role="group" aria-label="Vista de agenda">
           <button class="btn btn--sm" id="btn-vista-lista" type="button">Lista</button>

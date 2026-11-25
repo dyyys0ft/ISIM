@@ -3,7 +3,7 @@ import { $, $$, escapeHtml, setBusy, toast } from '../ui.js';
 import { initChrome } from '../chrome.js';
 import { puede } from '../permisos.js';
 import { alSalir } from '../navegacion.js';
-import { abrirAccionesLopdp } from '../lopdp.js';
+import { abrirCargaEvidencia, abrirSelectorConsentimiento } from '../lopdp.js';
 
 const ESTADOS_CITA = {
   programada: { texto: 'Programada', clase: 'programada' },
@@ -55,6 +55,7 @@ const estadoPagina = {
   vista: 'lista',
   mes: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
   citaSeleccionada: null,
+  avisoLopdp: null,
   pacienteParam: new URLSearchParams(location.search).get('patientId') || '',
 };
 
@@ -105,6 +106,80 @@ function estadoConsentimiento(cita) {
     return { clase: 'pendiente', texto: 'Consentimiento sin firmar', corto: '⚠ Sin firmar' };
   }
   return { clase: 'pendiente', texto: 'Consentimiento sin generar', corto: '⚠ Sin consentimiento' };
+}
+
+/** El pendiente LOPDP se deriva de la evidencia, nunca de la marca de fecha. */
+function pacienteSinEvidencia(paciente) {
+  if (!paciente?.id) return false;
+  if (paciente.consentimientoEstado) {
+    return !paciente.consentimientoEstado.evidencia;
+  }
+  return !paciente.consentimientoEvidencia;
+}
+
+function ocultarAvisoLopdp() {
+  estadoPagina.avisoLopdp = null;
+  const region = $('#aviso-lopdp-agenda');
+  if (region) region.hidden = true;
+}
+
+function mostrarAvisoLopdp(paciente, citaId = null) {
+  const region = $('#aviso-lopdp-agenda');
+  if (!region || !paciente?.id || !pacienteSinEvidencia(paciente)) {
+    ocultarAvisoLopdp();
+    return;
+  }
+
+  estadoPagina.avisoLopdp = { paciente, citaId };
+  const nombre = `${paciente.nombres || ''} ${paciente.apellidos || ''}`.trim();
+  const cedula = paciente.cedula ? ` (C.I. ${paciente.cedula})` : '';
+  $('#aviso-lopdp-texto').textContent =
+    `${nombre}${cedula} no tiene evidencia firmada cargada. ` +
+    'La cita ya quedó registrada; el pendiente se resuelve al subir la evidencia.';
+  $('#aviso-lopdp-ficha').href = `/paciente.html?id=${encodeURIComponent(
+    paciente.id
+  )}&tab=datos`;
+  $('#aviso-lopdp-subir').hidden = !puede(estadoPagina.usuario, 'pacientes.editar');
+  region.hidden = false;
+}
+
+async function previsualizarLopdpAviso() {
+  const aviso = estadoPagina.avisoLopdp;
+  if (!aviso) return;
+  try {
+    await abrirSelectorConsentimiento({
+      paciente: aviso.paciente,
+      citaId: aviso.citaId,
+      puedeVerDocumentos: puede(estadoPagina.usuario, 'documentos.ver'),
+      puedeCrearDocumentos: puede(estadoPagina.usuario, 'documentos.crear'),
+    });
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+}
+
+function subirEvidenciaAviso() {
+  const aviso = estadoPagina.avisoLopdp;
+  if (!aviso) return;
+  abrirCargaEvidencia({
+    paciente: aviso.paciente,
+    onSubida: async () => {
+      const actualizado = await api
+        .get(`/api/patients/${encodeURIComponent(aviso.paciente.id)}`)
+        .catch(() => null);
+      if (actualizado) {
+        estadoPagina.pacienteSeleccionado = actualizado;
+        aviso.paciente = actualizado;
+        if (!pacienteSinEvidencia(actualizado)) {
+          ocultarAvisoLopdp();
+          toast('Evidencia cargada: pendiente LOPDP resuelto', 'success');
+        } else {
+          mostrarAvisoLopdp(actualizado, aviso.citaId);
+        }
+      }
+      await cargarCitas();
+    },
+  });
 }
 
 function claveDia(iso) {
@@ -1846,15 +1921,19 @@ async function guardarCita(evento) {
     $('#dlg-cita').close();
     await cargarCitas();
 
-    // Solo para pacientes nuevas: imprimir/escoger LOPDP y subir evidencia.
-    if (pacienteNuevo) {
-      abrirAccionesLopdp({
-        paciente: pacienteNuevo,
-        citaId: citaCreada?.id || null,
-        puedeVerDocumentos: puede(estadoPagina.usuario, 'documentos.ver'),
-        puedeCrearDocumentos: puede(estadoPagina.usuario, 'documentos.crear'),
-        puedeEditar: puede(estadoPagina.usuario, 'pacientes.editar'),
-      });
+    // Sin interrupción modal: el pendiente LOPDP se muestra como aviso no modal
+    // y se resuelve con la evidencia firmada, no con la marca de consentimiento.
+    if (!id) {
+      let pacienteParaAviso = pacienteNuevo || estadoPagina.pacienteSeleccionado;
+      if (!pacienteParaAviso && patientId) {
+        pacienteParaAviso = await api
+          .get(`/api/patients/${encodeURIComponent(patientId)}`)
+          .catch(() => null);
+        if (pacienteParaAviso) estadoPagina.pacienteSeleccionado = pacienteParaAviso;
+      }
+      if (pacienteParaAviso) {
+        mostrarAvisoLopdp(pacienteParaAviso, citaCreada?.id || null);
+      }
     }
   } catch (error) {
     setBusy(boton, false);
@@ -1887,6 +1966,10 @@ function conectarEventos() {
   $('#btn-motivo-otro')?.addEventListener('click', () => abrirMotivoOtro());
   $('#btn-motivo-otro-usar')?.addEventListener('click', () => usarMotivoOtro());
   $('#dlg-motivos')?.addEventListener('close', () => limpiarFormularioMotivo());
+
+  $('#aviso-lopdp-previsualizar')?.addEventListener('click', () => previsualizarLopdpAviso());
+  $('#aviso-lopdp-subir')?.addEventListener('click', () => subirEvidenciaAviso());
+  $('#aviso-lopdp-cerrar')?.addEventListener('click', () => ocultarAvisoLopdp());
 
   $('#btn-paciente-nueva').addEventListener('click', () => {
     $('#cita-paciente').value = '';
