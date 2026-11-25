@@ -1,9 +1,14 @@
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
-import { relative, resolve } from 'node:path';
+import { existsSync, mkdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, relative, resolve } from 'node:path';
 import puppeteer from 'puppeteer-core';
 import { crearEntornoE2E } from './lib/e2e-harness.mjs';
 import { leerDump } from '../server/lib/migracion/oldDb.js';
+import {
+  comprobarOrigenDump,
+  resolverDumpMigracion,
+} from './lib/migracion-fixture.mjs';
 
 /**
  * E2E de migración con credenciales antiguas.
@@ -14,6 +19,7 @@ import { leerDump } from '../server/lib/migracion/oldDb.js';
  */
 
 const archivosLimpiar = [];
+const CAPTURAS = resolve(tmpdir(), 'isim-capturas');
 let entorno = null;
 let navegador = null;
 
@@ -38,11 +44,21 @@ function cedulaDe(valor) {
 }
 
 async function main() {
+  const origen = comprobarOrigenDump(resolverDumpMigracion());
+  assert.equal(
+    origen.esFixture,
+    !existsSync(resolve('old_db.sql')),
+    'El fixture debe usarse solo cuando old_db.sql no existe'
+  );
+  if (origen.esFixture) {
+    assert.match(origen.ruta, /tests[\\/]fixtures[\\/]migracion[\\/]old_db_fixture\.sql$/);
+  }
+
   entorno = await crearEntornoE2E();
   console.log(`Servidor de prueba: ${entorno.base}`);
 
-  console.log('Leyendo old_db.sql…');
-  const tablas = leerDump(resolve('old_db.sql'));
+  console.log(`Leyendo ${origen.nombre}…`);
+  const tablas = leerDump(origen.ruta);
 
   const filas = [...tablas.entries()].map(([nombre, lista]) => [nombre, lista]);
   const columnasDe = (tabla) => {
@@ -79,12 +95,14 @@ async function main() {
 
   const admin = entorno.crearCliente();
   await entorno.iniciarSesion(admin, 'admin', '54321');
+  const antesMigracion = await admin('/api/patients/paginated?limit=1');
+  const pacientesBase = Number(antesMigracion.total) || 0;
 
   const analisis = await admin('/api/migration/old-db/analyze', {
     method: 'POST',
     rawBody: sql,
     contentType: 'application/sql',
-    headers: { 'x-nombre-archivo': 'old_db.sql' },
+    headers: { 'x-nombre-archivo': origen.esFixture ? 'old_db_fixture.sql' : 'old_db.sql' },
     timeout: 120000,
   });
   archivosLimpiar.push(`migracion/${analisis.id}.sql`);
@@ -95,7 +113,9 @@ async function main() {
     timeout: 240000,
   });
   if (corrida.resumen?.respaldo) {
-    archivosLimpiar.push(relative(resolve(entorno.root, 'data'), corrida.resumen.respaldo));
+    archivosLimpiar.push(
+      relative(entorno.dataDir || resolve(entorno.root, 'data'), corrida.resumen.respaldo)
+    );
   }
   if (corrida.resumen?.usuarios?.archivoCredenciales) {
     archivosLimpiar.push(corrida.resumen.usuarios.archivoCredenciales);
@@ -138,7 +158,16 @@ async function main() {
 
   const listado = await antiguo('/api/patients/paginated?limit=1');
   assert.equal(listado.status, 200);
-  assert.ok(listado.datos.total >= 20000, 'Deben verse los pacientes antiguos');
+  if (origen.esFixture) {
+    const datosFixture = (tablas.get('datos') || []).length;
+    assert.equal(
+      listado.datos.total,
+      pacientesBase + datosFixture,
+      'Con fixture deben verse exactamente los pacientes sintéticos migrados'
+    );
+  } else {
+    assert.ok(listado.datos.total >= 20000, 'Deben verse los pacientes antiguos');
+  }
 
   const historia = await antiguo('/api/clinical-history/patients?limit=20');
   assert.equal(historia.status, 200);
@@ -197,6 +226,15 @@ async function main() {
       { timeout: 20000 },
       cedula
     );
+    mkdirSync(CAPTURAS, { recursive: true });
+    await pagina.screenshot({
+      path: join(CAPTURAS, 'migracion-credenciales-escritorio.png'),
+    });
+    await pagina.setViewport({ width: 390, height: 844 });
+    await new Promise((listo) => setTimeout(listo, 250));
+    await pagina.screenshot({
+      path: join(CAPTURAS, 'migracion-credenciales-movil.png'),
+    });
     console.log(`✓ Navegador: paciente antigua ${cedula} visible en Pacientes`);
   } else {
     console.log('⚠ No se encontró Chrome/Edge; se omite la validación visual.');
@@ -207,7 +245,8 @@ async function main() {
   console.log(
     JSON.stringify(
       {
-        fuente: 'old_db.sql',
+        fuente: origen.nombre,
+        origenEsFixture: origen.esFixture,
         credencial: 'adminis / 12345',
         rol: 'admin',
         pacientesVisibles: listado.datos.total,

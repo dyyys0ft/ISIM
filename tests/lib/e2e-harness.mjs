@@ -207,7 +207,7 @@ export async function crearEntornoE2E({ host = '127.0.0.1' } = {}) {
   async function limpiar(archivosExtra = []) {
     await detener();
     for (const archivo of archivosExtra) {
-      const ruta = resolve(root, 'data', archivo);
+      const ruta = resolve(dataDir, archivo);
       if (existsSync(ruta)) rmSync(ruta, { force: true });
     }
     for (const archivo of [dbFile, `${dbFile}-wal`, `${dbFile}-shm`]) {
