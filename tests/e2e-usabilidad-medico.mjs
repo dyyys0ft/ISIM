@@ -178,6 +178,8 @@ async function main() {
       waitUntil: 'domcontentloaded',
     });
     await p.waitForSelector('#form-datos');
+    await p.waitForSelector('#imprimir-consentimiento', { timeout: 15000 });
+    await p.waitForSelector('#subir-evidencia', { timeout: 15000 });
     assert.equal(
       await p.$eval('[name="consentimiento_datos"]', (nodo) => nodo.checked),
       false,

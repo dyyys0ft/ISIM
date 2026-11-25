@@ -440,6 +440,8 @@ CREATE TABLE IF NOT EXISTS audit_log (
   accion     TEXT NOT NULL,
   entidad    TEXT NOT NULL,
   entidad_id TEXT,
+  modulo     TEXT,
+  accion_tipo TEXT,
   detalle    TEXT,
   creado_en  TEXT NOT NULL
 );
@@ -448,6 +450,8 @@ CREATE INDEX IF NOT EXISTS idx_audit_entidad ON audit_log(entidad, entidad_id);
 CREATE INDEX IF NOT EXISTS idx_audit_user_fecha ON audit_log(user_id, creado_en DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_fecha ON audit_log(creado_en DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_accion ON audit_log(accion, creado_en DESC);
+-- Los índices de módulo y tipo de acción se crean después de la migración aditiva
+-- en server/db/index.js, para que una base antigua pueda agregar primero las columnas.
 
 -- ---------------------------------------------------------------------------
 -- Configuración del sistema (logo de encabezado, etc.)

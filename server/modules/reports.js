@@ -1,5 +1,11 @@
 import { db, nowIso } from '../db/index.js';
 import { audit } from '../lib/audit.js';
+import {
+  MODULOS_SISTEMA,
+  TIPOS_ACCION,
+  moduloDe,
+  tipoAccionDe,
+} from '../lib/auditTaxonomy.js';
 import { HttpError } from '../lib/http.js';
 import { PERMISOS, exigir } from '../lib/permissions.js';
 import { cerrarSesionesTiempoReal } from '../lib/sessionEvents.js';
@@ -138,52 +144,6 @@ function mapa(ids, sql, transformar = (fila) => fila) {
   if (!lista.length) return new Map();
   const filas = db.prepare(sql(marcadores(lista.length))).all(...lista);
   return new Map(filas.map((fila) => [fila.id, transformar(fila)]));
-}
-
-const MODULOS_ENTIDAD = {
-  users: 'Usuarios',
-  patients: 'Pacientes',
-  appointments: 'Agenda',
-  clinical_records: 'Historia clínica',
-  clinical_exams: 'Exámenes',
-  clinical_attachments: 'Exámenes',
-  documents: 'Documentos',
-  document_versions: 'Documentos',
-  signatures: 'Documentos',
-  prescriptions: 'Recetas',
-  crm_messages: 'CRM',
-  crm_tasks: 'CRM',
-  templates: 'Plantillas',
-  settings: 'Configuración',
-  migration_runs: 'Migración',
-  patient_share_links: 'Documentos',
-  backups: 'Respaldos',
-};
-
-const MODULOS_ACCION = [
-  [/^(login|logout|login_fallido|login_ambiguo|sesiones_revocadas)$/, 'Acceso'],
-  [/^paciente_/, 'Pacientes'],
-  [/^contacto_paciente_/, 'Pacientes'],
-  [/^(cita_|agenda_)/, 'Agenda'],
-  [/^(consulta_|historia_)/, 'Historia clínica'],
-  [/^(examen_|adjunto_)/, 'Exámenes'],
-  [/^(documento_|consentimiento_|documentos_paciente_|copia_|firma_(?!medico_))/, 'Documentos'],
-  [/^receta_/, 'Recetas'],
-  [/^crm_/, 'CRM'],
-  [/^(firma_medico_|perfil_|password_|foto_)/, 'Mi cuenta'],
-  [/^plantilla_/, 'Plantillas'],
-  [/^whatsapp_/, 'WhatsApp'],
-  [/^(centro_|logo_|pie_|alertas_|red_)/, 'Configuración'],
-  [/^(migracion_|duplicados_)/, 'Migración'],
-  [/^(respaldo_|respaldos_)/, 'Respaldos'],
-];
-
-function moduloDe(evento) {
-  const accion = String(evento.accion || '');
-  for (const [patron, modulo] of MODULOS_ACCION) {
-    if (patron.test(accion)) return modulo;
-  }
-  return MODULOS_ENTIDAD[evento.entidad] || 'Sistema';
 }
 
 function enriquecerEventos(eventos) {
@@ -407,7 +367,8 @@ function enriquecerEventos(eventos) {
 
   return eventos.map((evento, indice) => ({
     ...evento,
-    modulo: moduloDe(evento),
+    modulo: evento.modulo || moduloDe(evento.accion, evento.entidad),
+    accion_tipo: evento.accion_tipo || tipoAccionDe(evento.accion),
     paciente: textoPaciente(pacienteDe(evento, detalles[indice])),
     referencia: referencia(evento, detalles[indice]),
     detalle_legible: detalleLegible(evento.detalle),
@@ -483,9 +444,11 @@ export function routes(router) {
 
     const { dia, inicio, fin } = rangoDia(ctx.url.searchParams.get('fecha'));
     const usuarioId = String(ctx.url.searchParams.get('usuario') || '').trim();
+    const modulo = String(ctx.url.searchParams.get('modulo') || '').trim();
+    const accionTipo = String(ctx.url.searchParams.get('accion') || '').trim();
     const limite = Math.min(
-      Math.max(Number(ctx.url.searchParams.get('limit') || 500), 1),
-      1000
+      Math.max(Number(ctx.url.searchParams.get('limit') || 5000), 1),
+      5000
     );
 
     let objetivo = null;
@@ -496,11 +459,12 @@ export function routes(router) {
       if (!objetivo) throw new HttpError(404, 'Usuario no encontrado');
     }
 
-    const eventos = enriquecerEventos(
+    const todos = enriquecerEventos(
       db
         .prepare(
           `SELECT a.id, a.user_id AS usuario_id, u.nombre AS usuario_nombre,
-                  a.accion, a.entidad, a.entidad_id, a.detalle, a.creado_en
+                  a.accion, a.accion_tipo, a.entidad, a.entidad_id, a.modulo,
+                  a.detalle, a.creado_en
            FROM audit_log a
            LEFT JOIN users u ON u.id = a.user_id
            WHERE a.creado_en >= ? AND a.creado_en < ?
@@ -511,7 +475,17 @@ export function routes(router) {
         .all(...(objetivo ? [inicio, fin, objetivo.id, limite] : [inicio, fin, limite]))
     );
 
-    return { fecha: dia, usuario: objetivo, eventos };
+    const filtros = {
+      modulos: [...MODULOS_SISTEMA],
+      acciones: [...TIPOS_ACCION],
+    };
+    const eventos = todos.filter(
+      (evento) =>
+        (!modulo || evento.modulo === modulo) &&
+        (!accionTipo || evento.accion_tipo === accionTipo)
+    );
+
+    return { fecha: dia, usuario: objetivo, filtros, eventos };
   });
 
   router.get('/api/reports/users/:id/activity', (ctx) => {
@@ -532,7 +506,7 @@ export function routes(router) {
     const eventos = enriquecerEventos(
       db
         .prepare(
-          `SELECT id, accion, entidad, entidad_id, detalle, creado_en
+          `SELECT id, accion, accion_tipo, entidad, entidad_id, modulo, detalle, creado_en
            FROM audit_log
            WHERE user_id = ? AND creado_en >= ? AND creado_en < ?
            ORDER BY creado_en DESC

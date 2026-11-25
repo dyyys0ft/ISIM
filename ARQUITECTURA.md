@@ -1414,3 +1414,32 @@ La configuración vive en **Ajustes → Red / Acceso** y consta de dos partes.
   `sgcpm-antes-examenes-historia-1795406019033.db`, build `1.9.0-mwsq6q43`,
   PID 26316; 20.049 pacientes, `foreign_key_check` en 0 y sin migración de
   esquema en esta fase.
+
+## 31. Reportes con taxonomía de auditoría (28/28)
+
+- **Módulos:** el filtro de reportes usa una lista fija con todos los módulos del
+  sistema: Acceso, Dashboard, Agenda, Pacientes, Historia clínica, Exámenes,
+  Recetas, Pedidos, Certificados, Documentos, Consentimientos, CRM, Usuarios,
+  Plantillas, Configuración, Reportes, Respaldos, Migración, WhatsApp, Mi cuenta
+  y Sistema.
+- **Acciones:** toda acción se clasifica en **ver, leer, modificar o eliminar**.
+  La acción específica (por ejemplo, `paciente_creado`) se conserva como
+  trazabilidad; la taxonomía se deriva en `server/lib/auditTaxonomy.js`.
+- **Base de datos:** `audit_log` incorpora columnas aditivas `modulo` y
+  `accion_tipo`, con índices. La migración única
+  `migracion_audit_taxonomia` clasificó los eventos existentes; en producción
+  fueron 827 eventos, 0 sin clasificar.
+- **Reportes:** se eliminó la columna lateral de usuarios. La actividad usa todo
+  el ancho, con filtros por módulo, acción y usuario, búsqueda libre, tabla por
+  acción/fecha/módulo/paciente/usuario/detalle y exportación CSV.
+- **Impresión:** el botón Imprimir genera un reporte A4 horizontal con fecha,
+  filtros aplicados, resumen y tabla; oculta navegación y controles.
+- **Pruebas:** **28/28 E2E OK**. Nueva `e2e-reportes-filtros.mjs` (sin lista
+  lateral, módulos fijos, cuatro tipos de acción, filtros combinados, tracking
+  en BD, limpieza e impresión); `e2e-migracion-esquema.mjs` valida las columnas
+  de auditoría. Producción: respaldo
+  `sgcpm-antes-auditoria-reportes-1795586474217.db`, build
+  `1.9.0-mwvpg6o4`, PID 33532; 20.049 pacientes, FK 0 y 827 eventos
+  clasificados.
+- **Capturas:** 54 reportes con filtros, 55 impresión A4 horizontal y 56 vista
+  móvil.

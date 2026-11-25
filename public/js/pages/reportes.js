@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { $, escapeHtml, fmtFecha, initials, setBusy, toast } from '../ui.js';
+import { $, escapeHtml, fmtFecha, setBusy, toast } from '../ui.js';
 import { initChrome } from '../chrome.js';
 import { puede } from '../permisos.js';
 
@@ -94,14 +94,29 @@ const ENTIDADES = {
   patient_share_links: 'Enlace de documentos',
 };
 
+const TIPOS_ACCION = {
+  ver: 'Ver',
+  leer: 'Leer',
+  modificar: 'Modificar',
+  eliminar: 'Eliminar',
+};
+
+function etiquetaTipoAccion(valor) {
+  return TIPOS_ACCION[valor] || String(valor || '—');
+}
+
 const estado = {
   usuario: null,
   fecha: '',
   usuarios: [],
   resumen: null,
-  seleccionado: null,
   filtroUsuario: '',
+  filtroModulo: '',
+  filtroAccion: '',
+  opcionesModulos: [],
+  opcionesAcciones: [],
   eventos: [],
+  eventosVisibles: [],
   busqueda: '',
 };
 
@@ -114,14 +129,6 @@ function etiquetaAccion(valor) {
 
 function etiquetaEntidad(valor) {
   return ENTIDADES[valor] || valor || '—';
-}
-
-function hora(iso) {
-  if (!iso) return '';
-  return new Date(iso).toLocaleTimeString('es-EC', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 }
 
 function sinTildes(texto) {
@@ -155,41 +162,50 @@ function renderResumen() {
   `;
 }
 
-function renderUsuarios() {
-  const contenedor = $('#reporte-lista');
-  if (!estado.usuarios.length) {
-    contenedor.innerHTML = '<p class="muted small">No hay usuarios para mostrar.</p>';
-    return;
-  }
+function actualizarEncabezadoImpresion(usuario) {
+  const filtros = [];
+  if (estado.filtroModulo) filtros.push(`Módulo: ${estado.filtroModulo}`);
+  if (estado.filtroAccion) filtros.push(`Acción: ${etiquetaTipoAccion(estado.filtroAccion)}`);
+  if (usuario) filtros.push(`Usuario: ${usuario.nombre}`);
+  if (estado.busqueda) filtros.push(`Búsqueda: ${estado.busqueda}`);
 
-  contenedor.innerHTML = estado.usuarios
-    .map(
-      (usuario) => `
-      <button
-        class="reporte-usuario ${usuario.id === estado.seleccionado ? 'is-active' : ''}"
-        type="button"
-        data-usuario="${escapeHtml(usuario.id)}"
-      >
-        <span class="reporte-usuario__avatar" aria-hidden="true">${escapeHtml(
-          initials(usuario.nombre)
-        )}</span>
-        <span class="reporte-usuario__info">
-          <strong>${escapeHtml(usuario.nombre)}</strong>
-          <span>${escapeHtml(usuario.rol || '')}${
-            usuario.activo ? '' : ' · inactivo'
-          }${usuario.sesion_activa ? ' · sesión activa' : ''}</span>
-        </span>
-        <span class="reporte-usuario__meta">
-          <b>${usuario.eventos}</b>
-          <small>${usuario.ultimo ? hora(usuario.ultimo) : 'sin actividad'}</small>
-        </span>
-      </button>`
-    )
-    .join('');
+  $('#reporte-print-fecha').textContent = `Fecha: ${fmtFecha(
+    `${estado.fecha}T12:00:00`,
+    { weekday: true }
+  )}`;
+  $('#reporte-print-filtros').textContent = `Filtros: ${
+    filtros.length ? filtros.join(' · ') : 'ninguno'
+  }`;
+  $('#reporte-print-generado').textContent = `Generado: ${new Date().toLocaleString(
+    'es-EC',
+    {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }
+  )}`;
+}
 
-  for (const boton of contenedor.querySelectorAll('[data-usuario]')) {
-    boton.addEventListener('click', () => seleccionarUsuario(boton.dataset.usuario));
-  }
+function renderFiltroOpciones() {
+  const modulo = $('#actividad-modulo');
+  const accion = $('#actividad-accion');
+  modulo.innerHTML = [
+    '<option value="">Todos los módulos</option>',
+    ...estado.opcionesModulos.map(
+      (valor) => `<option value="${escapeHtml(valor)}">${escapeHtml(valor)}</option>`
+    ),
+  ].join('');
+  accion.innerHTML = [
+    '<option value="">Todas las acciones</option>',
+    ...estado.opcionesAcciones.map(
+      (valor) =>
+        `<option value="${escapeHtml(valor)}">${escapeHtml(etiquetaTipoAccion(valor))}</option>`
+    ),
+  ].join('');
+  modulo.value = estado.filtroModulo;
+  accion.value = estado.filtroAccion;
 }
 
 function renderActividad() {
@@ -198,15 +214,6 @@ function renderActividad() {
     ? estado.usuarios.find((item) => item.id === estado.filtroUsuario)
     : null;
   const busqueda = sinTildes(estado.busqueda);
-
-  $('#actividad-titulo').textContent = usuario
-    ? `Actividad de ${usuario.nombre}`
-    : 'Actividad de todos los usuarios';
-  $('#actividad-sub').textContent = `${estado.eventos.length} evento${
-    estado.eventos.length === 1 ? '' : 's'
-  } el ${estado.fecha}${
-    usuario ? '' : ' · elige un usuario en el filtro para ver solo su actividad'
-  }`;
 
   const botonCerrar = $('#btn-cerrar-sesion-usuario');
   botonCerrar.hidden = !(
@@ -226,14 +233,28 @@ function renderActividad() {
       } ${evento.usuario_nombre || ''}`
     ).includes(busqueda);
   });
+  estado.eventosVisibles = eventos;
+
+  const filtrosActivos = [];
+  if (estado.filtroModulo) filtrosActivos.push(estado.filtroModulo);
+  if (estado.filtroAccion) filtrosActivos.push(etiquetaTipoAccion(estado.filtroAccion));
+  if (usuario) filtrosActivos.push(usuario.nombre);
+
+  $('#actividad-titulo').textContent = usuario
+    ? `Actividad de ${usuario.nombre}`
+    : 'Actividad de todos los usuarios';
+  $('#actividad-sub').textContent = `${eventos.length} evento${
+    eventos.length === 1 ? '' : 's'
+  } el ${fmtFecha(`${estado.fecha}T12:00:00`)}.${
+    filtrosActivos.length ? ` Filtros: ${filtrosActivos.join(' · ')}.` : ''
+  }`;
+  actualizarEncabezadoImpresion(usuario);
 
   if (!eventos.length) {
     contenedor.innerHTML = `<p class="muted small">${
-      estado.eventos.length
-        ? 'No hay eventos que coincidan con la búsqueda.'
-        : usuario
-          ? 'Este usuario no tuvo actividad en la fecha seleccionada.'
-          : 'No hubo actividad en la fecha seleccionada.'
+      estado.busqueda || filtrosActivos.length
+        ? 'No hay eventos que coincidan con los filtros.'
+        : 'No hubo actividad en la fecha seleccionada.'
     }</p>`;
     return;
   }
@@ -255,12 +276,16 @@ function renderActividad() {
         <tbody>
           ${eventos
             .map((evento) => {
-              const detalle = [evento.referencia, evento.detalle_legible]
+              const detalle = [
+                etiquetaAccion(evento.accion),
+                evento.referencia,
+                evento.detalle_legible,
+              ]
                 .filter(Boolean)
                 .join(' · ');
               return `<tr>
                 <td class="reporte-tabla__accion">${escapeHtml(
-                  etiquetaAccion(evento.accion)
+                  etiquetaTipoAccion(evento.accion_tipo)
                 )}</td>
                 <td>${escapeHtml(fmtFecha(evento.creado_en, { time: true }) || '—')}</td>
                 <td><span class="reporte-tabla__modulo">${escapeHtml(
@@ -294,17 +319,28 @@ function renderFiltroUsuarios() {
 async function cargarActividad() {
   estado.busqueda = '';
   $('#actividad-buscar').value = '';
-  renderUsuarios();
   $('#actividad-lista').innerHTML = '<p class="muted small">Cargando actividad…</p>';
 
   try {
-    const filtro = estado.filtroUsuario
-      ? `&usuario=${encodeURIComponent(estado.filtroUsuario)}`
-      : '';
-    const datos = await api.get(
-      `/api/reports/activity?fecha=${encodeURIComponent(estado.fecha)}${filtro}&limit=1000`
-    );
+    const params = new URLSearchParams({
+      fecha: estado.fecha,
+      limit: '5000',
+    });
+    if (estado.filtroUsuario) params.set('usuario', estado.filtroUsuario);
+    if (estado.filtroModulo) params.set('modulo', estado.filtroModulo);
+    if (estado.filtroAccion) params.set('accion', estado.filtroAccion);
+
+    const datos = await api.get(`/api/reports/activity?${params.toString()}`);
     estado.eventos = datos.eventos || [];
+    estado.opcionesModulos = [...(datos.filtros?.modulos || [])];
+    estado.opcionesAcciones = [...(datos.filtros?.acciones || [])];
+    if (estado.filtroModulo && !estado.opcionesModulos.includes(estado.filtroModulo)) {
+      estado.opcionesModulos.push(estado.filtroModulo);
+    }
+    if (estado.filtroAccion && !estado.opcionesAcciones.includes(estado.filtroAccion)) {
+      estado.opcionesAcciones.push(estado.filtroAccion);
+    }
+    renderFiltroOpciones();
     renderActividad();
     $('#btn-exportar-reporte').disabled = estado.eventos.length === 0;
   } catch (error) {
@@ -316,7 +352,6 @@ async function cargarActividad() {
 
 async function seleccionarUsuario(userId) {
   estado.filtroUsuario = userId || '';
-  estado.seleccionado = estado.filtroUsuario || null;
   $('#actividad-usuario').value = estado.filtroUsuario;
   await cargarActividad();
 }
@@ -332,7 +367,6 @@ async function cargarReporte() {
     estado.usuarios = datos.usuarios || [];
     estado.resumen = datos;
     renderResumen();
-    renderUsuarios();
     renderFiltroUsuarios();
 
     if (
@@ -340,7 +374,6 @@ async function cargarReporte() {
       !estado.usuarios.some((usuario) => usuario.id === estado.filtroUsuario)
     ) {
       estado.filtroUsuario = '';
-      estado.seleccionado = null;
       $('#actividad-usuario').value = '';
     }
 
@@ -390,11 +423,22 @@ function exportarCsv() {
   const usuario = estado.filtroUsuario
     ? estado.usuarios.find((item) => item.id === estado.filtroUsuario)
     : null;
-  if (!estado.eventos.length) return;
+  const eventos = estado.eventosVisibles || [];
+  if (!eventos.length) return;
 
   const filas = [
-    ['Acción', 'Fecha y hora', 'Módulo', 'Paciente', 'Usuario', 'Referencia', 'Detalle'],
-    ...estado.eventos.map((evento) => [
+    [
+      'Tipo de acción',
+      'Evento',
+      'Fecha y hora',
+      'Módulo',
+      'Paciente',
+      'Usuario',
+      'Referencia',
+      'Detalle',
+    ],
+    ...eventos.map((evento) => [
+      etiquetaTipoAccion(evento.accion_tipo),
       etiquetaAccion(evento.accion),
       fmtFecha(evento.creado_en, { time: true }) || estado.fecha,
       evento.modulo || '',
@@ -436,8 +480,31 @@ function conectarEventos() {
     seleccionarUsuario($('#actividad-usuario').value);
   });
 
+  $('#actividad-modulo').addEventListener('change', () => {
+    estado.filtroModulo = $('#actividad-modulo').value;
+    cargarActividad();
+  });
+
+  $('#actividad-accion').addEventListener('change', () => {
+    estado.filtroAccion = $('#actividad-accion').value;
+    cargarActividad();
+  });
+
+  $('#btn-limpiar-filtros-reporte').addEventListener('click', () => {
+    estado.filtroUsuario = '';
+    estado.filtroModulo = '';
+    estado.filtroAccion = '';
+    estado.busqueda = '';
+    $('#actividad-usuario').value = '';
+    $('#actividad-modulo').value = '';
+    $('#actividad-accion').value = '';
+    $('#actividad-buscar').value = '';
+    cargarActividad();
+  });
+
   $('#btn-actualizar-reporte').addEventListener('click', cargarReporte);
   $('#btn-exportar-reporte').addEventListener('click', exportarCsv);
+  $('#btn-imprimir-reporte').addEventListener('click', () => window.print());
   $('#btn-cerrar-sesion-usuario').addEventListener('click', cerrarSesionUsuario);
 
   $('#actividad-buscar').addEventListener('input', () => {

@@ -46,6 +46,12 @@ try {
   }
   console.log('✓ patients: campos clínicos + consentimiento, embarazo y notas');
 
+  const auditoria = columnas(db, 'audit_log');
+  for (const campo of ['modulo', 'accion_tipo']) {
+    assert.ok(auditoria.includes(campo), `Falta audit_log.${campo}`);
+  }
+  console.log('✓ audit_log: módulo y tipo de acción');
+
   const documentos = columnas(db, 'documents');
   for (const campo of ['numero', 'subtipo', 'datos']) {
     assert.ok(documentos.includes(campo), `Falta documents.${campo}`);

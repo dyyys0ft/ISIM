@@ -54,10 +54,11 @@ try {
     p.setDefaultTimeout(30000);
 
     await p.goto(`${entorno.base}/`, { waitUntil: 'domcontentloaded' });
+    await p.waitForSelector('#btn-ingresar');
     await p.type('#login-usuario', 'admin');
     await p.type('#login-password', '54321');
     await p.click('#btn-ingresar');
-    await p.waitForFunction(() => location.pathname === '/agenda.html');
+    await p.waitForFunction(() => location.pathname === '/agenda.html', { timeout: 30000 });
 
     await p.goto(`${entorno.base}/documentos.html`, { waitUntil: 'domcontentloaded' });
     await p.waitForFunction(

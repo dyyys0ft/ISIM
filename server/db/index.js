@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createHash, randomUUID } from 'node:crypto';
 import { config } from '../config.js';
+import { moduloDe, tipoAccionDe } from '../lib/auditTaxonomy.js';
 import {
   esUsernameValido,
   hashSecret,
@@ -1197,6 +1198,51 @@ if (
     'INSERT INTO settings (clave, valor, actualizado_en) VALUES (?, ?, ?)'
   ).run('migracion_permisos_secretario', '1', new Date().toISOString());
   console.log('[db] migración aplicada: permisos del secretario/a');
+}
+
+// Clasificación de auditoría por módulo y tipo de acción (aditiva).
+const columnasAuditoria = new Set(
+  db.prepare('PRAGMA table_info(audit_log)').all().map((columna) => columna.name)
+);
+if (!columnasAuditoria.has('modulo')) {
+  db.exec('ALTER TABLE audit_log ADD COLUMN modulo TEXT');
+}
+if (!columnasAuditoria.has('accion_tipo')) {
+  db.exec('ALTER TABLE audit_log ADD COLUMN accion_tipo TEXT');
+}
+db.exec(
+  'CREATE INDEX IF NOT EXISTS idx_audit_modulo ON audit_log(modulo, creado_en DESC)'
+);
+db.exec(
+  'CREATE INDEX IF NOT EXISTS idx_audit_accion_tipo ON audit_log(accion_tipo, creado_en DESC)'
+);
+if (
+  !db
+    .prepare("SELECT 1 FROM settings WHERE clave = 'migracion_audit_taxonomia'")
+    .get()
+) {
+  const filas = db.prepare('SELECT id, accion, entidad FROM audit_log').all();
+  db.exec('BEGIN');
+  try {
+    const actualizar = db.prepare(
+      'UPDATE audit_log SET modulo = ?, accion_tipo = ? WHERE id = ?'
+    );
+    for (const fila of filas) {
+      actualizar.run(
+        moduloDe(fila.accion, fila.entidad),
+        tipoAccionDe(fila.accion),
+        fila.id
+      );
+    }
+    db.prepare(
+      'INSERT INTO settings (clave, valor, actualizado_en) VALUES (?, ?, ?)'
+    ).run('migracion_audit_taxonomia', '1', new Date().toISOString());
+    db.exec('COMMIT');
+  } catch (error) {
+    db.exec('ROLLBACK');
+    throw error;
+  }
+  console.log(`[db] auditoría clasificada: ${filas.length} evento(s)`);
 }
 
 

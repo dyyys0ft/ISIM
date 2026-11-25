@@ -26,6 +26,7 @@ try {
     const p = await navegador.newPage();
     await p.setViewport({ width: 1440, height: 900 });
     await p.goto(`${entorno.base}/`, { waitUntil: 'domcontentloaded' });
+    await p.waitForSelector('#btn-ingresar');
     await p.type('#login-usuario', 'recepcion');
     await p.type('#login-password', '1236');
     await p.click('#btn-ingresar');
