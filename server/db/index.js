@@ -1245,6 +1245,36 @@ if (
   console.log(`[db] auditoría clasificada: ${filas.length} evento(s)`);
 }
 
+// Reclasifica eventos históricos si cambia la taxonomía de acciones.
+if (
+  !db
+    .prepare("SELECT 1 FROM settings WHERE clave = 'migracion_audit_taxonomia_v2'")
+    .get()
+) {
+  const filas = db.prepare('SELECT id, accion, entidad FROM audit_log').all();
+  db.exec('BEGIN');
+  try {
+    const actualizar = db.prepare(
+      'UPDATE audit_log SET modulo = ?, accion_tipo = ? WHERE id = ?'
+    );
+    for (const fila of filas) {
+      actualizar.run(
+        moduloDe(fila.accion, fila.entidad),
+        tipoAccionDe(fila.accion),
+        fila.id
+      );
+    }
+    db.prepare(
+      'INSERT INTO settings (clave, valor, actualizado_en) VALUES (?, ?, ?)'
+    ).run('migracion_audit_taxonomia_v2', '1', new Date().toISOString());
+    db.exec('COMMIT');
+  } catch (error) {
+    db.exec('ROLLBACK');
+    throw error;
+  }
+  console.log(`[db] auditoría reclasificada: ${filas.length} evento(s)`);
+}
+
 
 export const nowIso = () => new Date().toISOString();
 export const uid = () => randomUUID();

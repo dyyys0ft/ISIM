@@ -79,6 +79,7 @@ const MODULOS_ACCION = [
   [/^(password_restablecida|usuario_|rol_|instalacion_inicial)/, 'Usuarios'],
   [/^(migracion_|duplicados_)/, 'Migración'],
   [/^respaldo/, 'Respaldos'],
+  [/^clave_respaldos_/, 'Respaldos'],
   [/^whatsapp_/, 'WhatsApp'],
   [/^reporte_/, 'Reportes'],
 ];
@@ -123,6 +124,8 @@ const TIPOS_ESPECIFICOS = {
   consentimiento_negado: 'eliminar',
   consentimiento_revocado: 'eliminar',
   consentimiento_generado_cita: 'modificar',
+  consentimiento_evidencia_subida: 'modificar',
+  consentimiento_evidencia_eliminada: 'eliminar',
   firma_solicitada: 'modificar',
   firma_cancelada: 'eliminar',
   copia_entregada: 'leer',
@@ -167,6 +170,7 @@ const TIPOS_ESPECIFICOS = {
   red_ip_eliminada: 'eliminar',
   respaldos_configurados: 'modificar',
   respaldo_verificado: 'leer',
+  clave_respaldos_descargada: 'leer',
   instalacion_inicial: 'modificar',
 };
 

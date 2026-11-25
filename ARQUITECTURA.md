@@ -1443,3 +1443,25 @@ La configuración vive en **Ajustes → Red / Acceso** y consta de dos partes.
   clasificados.
 - **Capturas:** 54 reportes con filtros, 55 impresión A4 horizontal y 56 vista
   móvil.
+
+## 32. Pruebas de auditoría con acciones esperadas (29/29)
+
+- **Bitácora E2E:** `tests/lib/auditoria-e2e.mjs` permite declarar, paso a paso,
+  las acciones esperadas por usuario, módulo y tipo, y contrastarlas contra el
+  reporte de actividad.
+- **Prueba nueva:** `tests/e2e-auditoria-acciones.mjs` recorre 14 pasos con dos
+  usuarios. Declara las acciones de cada paso (login, paciente creado/editado,
+  contacto revelado, cita, historia, examen, adjunto, documento, usuario,
+  creación de cita/paciente por recepción y logout) y verifica:
+  - que el reporte API de cada usuario contenga la acción específica, el módulo
+    y el tipo esperado;
+  - que la tabla visible del reporte muestre las acciones de ADMIN y de
+    Recepción.
+- **Taxonomía:** `migracion_audit_taxonomia_v2` reclasificó los eventos
+  existentes. En producción quedaron **832 eventos, 0 sin clasificar**.
+- **Pruebas:** **29/29 E2E OK**. Producción: respaldo
+  `sgcpm-antes-auditoria-v2-1795587776351.db`, build `1.9.0-mwvqipgi`,
+  PID 14332; 20.049 pacientes, FK 0 y columnas `modulo`/`accion_tipo`
+  verificadas.
+- **Capturas:** 57 reporte de ADMIN con acciones esperadas y 58 reporte de
+  Recepción.
