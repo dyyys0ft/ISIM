@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync, rmSync } from 'node:fs';
+import { resolve } from 'node:path';
 import puppeteer from 'puppeteer-core';
 import { crearEntornoE2E } from './lib/e2e-harness.mjs';
 import { crearBitacoraAcciones } from './lib/auditoria-e2e.mjs';
@@ -11,6 +12,12 @@ import { crearBitacoraAcciones } from './lib/auditoria-e2e.mjs';
  */
 const sello = String(Date.now()).slice(-6);
 const capturas = 'C:\\Users\\dyane\\AppData\\Local\\Temp\\opencode\\ui-v2\\capturas';
+const DATA_DIR = resolve(
+  'C:\\Users\\dyane\\AppData\\Local\\Temp\\opencode\\ui-v2',
+  `data-auditoria-${Date.now()}`
+);
+mkdirSync(DATA_DIR, { recursive: true });
+process.env.DATA_DIR = DATA_DIR;
 const entorno = await crearEntornoE2E();
 
 try {
@@ -281,4 +288,5 @@ try {
   }
 } finally {
   await entorno.limpiar();
+  rmSync(DATA_DIR, { recursive: true, force: true });
 }

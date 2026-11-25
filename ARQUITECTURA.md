@@ -1459,6 +1459,9 @@ La configuración vive en **Ajustes → Red / Acceso** y consta de dos partes.
     Recepción.
 - **Taxonomía:** `migracion_audit_taxonomia_v2` reclasificó los eventos
   existentes. En producción quedaron **832 eventos, 0 sin clasificar**.
+- **Aislamiento:** la prueba usa un `DATA_DIR` temporal y lo elimina al
+  terminar, de modo que las evidencias y adjuntos generados no se escriben en
+  `data/` de producción.
 - **Pruebas:** **29/29 E2E OK**. Producción: respaldo
   `sgcpm-antes-auditoria-v2-1795587776351.db`, build `1.9.0-mwvqipgi`,
   PID 14332; 20.049 pacientes, FK 0 y columnas `modulo`/`accion_tipo`
