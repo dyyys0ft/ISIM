@@ -8,14 +8,15 @@ verificación.
 
 | Rol | Agente | Modelo |
 |---|---|---|
-| Orquestador | `orquestador` | `opencode-go/gpt-6-luna#high` |
-| Planificador | `planificador` | `opencode-go/claude-haiku-5-5#high` |
-| Investigador | `investigador` | `opencode-go/claude-haiku-5-5#medium` |
-| Ejecutor | `ejecutor` | `opencode-go/deepseek-v4.1-flash#high` |
-| Revisor | `revisor` | `opencode-go/gpt-6-luna#high` |
+| Orquestador | `orquestador` | `opencode-go/deepseek-v4.1-flash#high` |
+| Planificador | `planificador` | `opencode-go/deepseek-v4.1-flash#high` |
+| Investigador | `investigador` | `opencode-go/deepseek-v4.1-flash#high` |
+| Ejecutor (builder) | `ejecutor` | `opencode-go/deepseek-v4.1-flash#high` |
+| Revisor | `revisor` | `opencode-go/deepseek-v4.1-flash#high` |
 
-La planificación usa Haiku 5.5 high. La ejecución se queda en DeepSeek V4.1
-Flash high y la revisión en GPT-6 Luna high, un modelo distinto al ejecutor.
+Todos los roles usan **DeepSeek V4.1 Flash high**. OpenCode muestra este modelo
+como “DeepSeek V4.1 Flash 1017”; no existe una entrada de catálogo llamada
+“1070”. El ID canónico es `opencode-go/deepseek-v4.1-flash`.
 
 ## Uso
 

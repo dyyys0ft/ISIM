@@ -1,6 +1,7 @@
 ---
 description: Inicia una corrida del harness multiagente ISIM con investigación, plan, ejecución y revisión.
 agent: orquestador
+model: opencode-go/deepseek-v4.1-flash#high
 subagent: false
 ---
 

@@ -1,7 +1,7 @@
 ---
 description: Orquesta el harness multiagente ISIM, controla las puertas y autoriza la integración final.
 mode: primary
-model: opencode-go/gpt-6-luna#high
+model: opencode-go/deepseek-v4.1-flash#high
 steps: 70
 permissions:
   - action: edit

@@ -1,7 +1,7 @@
 ---
 description: Convierte la investigación del proyecto ISIM en un plan ejecutable con alcance, pruebas y riesgos.
 mode: subagent
-model: opencode-go/claude-haiku-5-5#high
+model: opencode-go/deepseek-v4.1-flash#high
 steps: 24
 permissions:
   - action: edit

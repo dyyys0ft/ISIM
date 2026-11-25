@@ -1,7 +1,7 @@
 ---
 description: Investiga el código, APIs, esquema y pruebas del ISIM sin modificar archivos.
 mode: subagent
-model: opencode-go/claude-haiku-5-5#medium
+model: opencode-go/deepseek-v4.1-flash#high
 steps: 28
 permissions:
   - action: edit

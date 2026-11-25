@@ -1,7 +1,7 @@
 ---
 description: Revisa el diff y la evidencia del ejecutor; emite APPROVE o REJECT sin modificar archivos.
 mode: subagent
-model: opencode-go/gpt-6-luna#high
+model: opencode-go/deepseek-v4.1-flash#high
 steps: 36
 permissions:
   - action: edit
