@@ -171,6 +171,26 @@ function esConflicto(error) {
   return String(error?.message || '').includes('UNIQUE constraint failed: patients.cedula');
 }
 
+/** Escapa los comodines de LIKE para que el término se busque literalmente. */
+function escaparLike(valor) {
+  return String(valor ?? '').replace(/[!%_]/g, (caracter) => `!${caracter}`);
+}
+
+/**
+ * Divide la búsqueda libre en términos. Cada término se exige por separado
+ * (AND) para que “nombres apellidos” y “apellidos nombres” encuentren igual,
+ * sin importar tildes ni mayúsculas. Se limita la cantidad y longitud para no
+ * construir consultas enormes desde el autocomplete.
+ */
+function terminosBusqueda(q) {
+  return q
+    .split(/\s+/)
+    .map((termino) => termino.trim())
+    .filter(Boolean)
+    .slice(0, 8)
+    .map((termino) => termino.slice(0, 40));
+}
+
 function construirFiltroPacientes(params) {
   const q = limpiar(params.get('q'), 80);
   const nombre = limpiar(params.get('nombre'), 80);
@@ -181,11 +201,15 @@ function construirFiltroPacientes(params) {
   const valores = [];
 
   if (q) {
-    const like = `%${q}%`;
-    condiciones.push(
-      `(sin_tildes(nombres || ' ' || apellidos) LIKE sin_tildes(?) OR cedula LIKE ?)`
-    );
-    valores.push(like, like);
+    for (const termino of terminosBusqueda(q)) {
+      const like = `%${escaparLike(termino)}%`;
+      condiciones.push(
+        `(sin_tildes(nombres) LIKE sin_tildes(?) ESCAPE '!'
+          OR sin_tildes(apellidos) LIKE sin_tildes(?) ESCAPE '!'
+          OR cedula LIKE ? ESCAPE '!')`
+      );
+      valores.push(like, like, like);
+    }
   }
   if (nombre) {
     condiciones.push('sin_tildes(nombres) LIKE sin_tildes(?)');

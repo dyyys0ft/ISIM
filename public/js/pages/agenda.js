@@ -40,6 +40,7 @@ const HORARIO_POR_DEFECTO = {
 };
 
 let motivosPorNombre = new Map();
+let motivosAdmin = [];
 
 const estadoPagina = {
   usuario: null,
@@ -50,7 +51,6 @@ const estadoPagina = {
   pacienteSeleccionado: null,
   pacientesTimer: null,
   pacientesSeq: 0,
-  temporizador: null,
   modoProximas: false,
   vista: 'lista',
   mes: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
@@ -226,10 +226,266 @@ async function cargarMotivos() {
     motivosPorNombre = new Map(
       grupos.flatMap((grupo) => grupo.motivos.map((item) => [item.motivo, grupo.grupo]))
     );
+    actualizarGruposMotivo(grupos);
   } catch {
     motivosPorNombre = new Map();
   }
 }
+
+/** Mantiene sincronizados los grupos del catálogo y del texto libre. */
+function actualizarGruposMotivo(grupos) {
+  const nombres = [...new Set(grupos.map((grupo) => grupo.grupo).filter(Boolean))];
+  const lista = nombres.length ? nombres : ['Consultas'];
+  const select = $('#motivo-otro-grupo');
+  if (select) {
+    const actual = select.value;
+    select.innerHTML = lista
+      .map((grupo) => `<option value="${escapeHtml(grupo)}">${escapeHtml(grupo)}</option>`)
+      .join('');
+    if (lista.includes(actual)) select.value = actual;
+  }
+  const datalist = $('#motivos-grupos');
+  if (datalist) {
+    datalist.innerHTML = lista
+      .map((grupo) => `<option value="${escapeHtml(grupo)}"></option>`)
+      .join('');
+  }
+}
+
+async function abrirMotivos() {
+  limpiarFormularioMotivo();
+  $('#dlg-motivos').showModal();
+  await cargarMotivosAdmin();
+}
+
+async function cargarMotivosAdmin() {
+  const contenedor = $('#motivos-lista');
+  contenedor.innerHTML = '<p class="hint">Cargando motivos…</p>';
+  try {
+    motivosAdmin = await api.get('/api/motivos/admin');
+    renderMotivosAdmin();
+  } catch (error) {
+    contenedor.innerHTML = `<p class="muted small">${escapeHtml(error.message)}</p>`;
+    toast(error.message, 'error');
+  }
+}
+
+function renderMotivosAdmin() {
+  const contenedor = $('#motivos-lista');
+  if (!motivosAdmin.length) {
+    contenedor.innerHTML = '<p class="hint">Todavía no hay motivos registrados.</p>';
+    return;
+  }
+
+  const grupos = new Map();
+  for (const fila of motivosAdmin) {
+    const grupo = fila.grupo || 'Consultas';
+    if (!grupos.has(grupo)) grupos.set(grupo, []);
+    grupos.get(grupo).push(fila);
+  }
+
+  contenedor.innerHTML = [...grupos.entries()]
+    .map(
+      ([grupo, filas]) => `
+      <section class="motivo-grupo" aria-label="${escapeHtml(grupo)}">
+        <h4 class="motivo-grupo__titulo">${escapeHtml(grupo)}</h4>
+        ${filas
+          .map((fila) => {
+            const activo = Number(fila.activo) === 1;
+            return `<article class="motivo-fila ${activo ? '' : 'motivo-fila--inactivo'}" data-id="${escapeHtml(
+              fila.id
+            )}">
+              <div class="motivo-fila__texto">
+                <strong>${escapeHtml(fila.motivo)}</strong>
+                <span class="motivo-fila__meta">
+                  Orden ${Number(fila.orden) || 1}
+                  ${
+                    activo
+                      ? '<span class="badge badge--programada">Activo</span>'
+                      : '<span class="badge badge--cancelada">Inactivo</span>'
+                  }
+                </span>
+              </div>
+              <div class="motivo-fila__acciones">
+                <button class="btn btn--sm" type="button" data-editar-motivo aria-label="Editar ${escapeHtml(
+                  fila.motivo
+                )}">Editar</button>
+                ${
+                  activo
+                    ? `<button class="btn btn--sm btn--danger" type="button" data-desactivar-motivo aria-label="Desactivar ${escapeHtml(
+                        fila.motivo
+                      )}">✕</button>`
+                    : `<button class="btn btn--sm" type="button" data-reactivar-motivo aria-label="Reactivar ${escapeHtml(
+                        fila.motivo
+                      )}">Reactivar</button>`
+                }
+              </div>
+            </article>`;
+          })
+          .join('')}
+      </section>`
+    )
+    .join('');
+
+  for (const boton of $$('#motivos-lista [data-editar-motivo]')) {
+    const id = boton.closest('[data-id]')?.dataset.id;
+    boton.addEventListener('click', () => editarMotivo(id));
+  }
+  for (const boton of $$('#motivos-lista [data-desactivar-motivo]')) {
+    const id = boton.closest('[data-id]')?.dataset.id;
+    boton.addEventListener('click', () => desactivarMotivo(id));
+  }
+  for (const boton of $$('#motivos-lista [data-reactivar-motivo]')) {
+    const id = boton.closest('[data-id]')?.dataset.id;
+    boton.addEventListener('click', () => reactivarMotivo(id));
+  }
+}
+
+function limpiarFormularioMotivo() {
+  const formulario = $('#form-motivo');
+  formulario.reset();
+  $('#motivo-id').value = '';
+  $('#motivo-grupo').value = 'Consultas';
+  $('#motivo-orden').value = '';
+  $('#btn-guardar-motivo').textContent = 'Agregar motivo';
+  $('#btn-cancelar-motivo').hidden = true;
+  $('#motivos-form-estado').textContent = '';
+}
+
+function editarMotivo(id) {
+  const fila = motivosAdmin.find((item) => item.id === id);
+  if (!fila) return;
+  $('#motivo-id').value = fila.id;
+  $('#motivo-grupo').value = fila.grupo || 'Consultas';
+  $('#motivo-texto').value = fila.motivo;
+  $('#motivo-orden').value = String(fila.orden || 1);
+  $('#btn-guardar-motivo').textContent = 'Guardar cambios';
+  $('#btn-cancelar-motivo').hidden = false;
+  $('#motivos-form-estado').textContent = `Editando “${fila.motivo}”.`;
+  $('#motivo-texto').focus();
+}
+
+async function guardarMotivo(evento) {
+  evento.preventDefault();
+  const formulario = $('#form-motivo');
+  if (!formulario.reportValidity()) return;
+
+  const id = $('#motivo-id').value;
+  const datos = {
+    grupo: $('#motivo-grupo').value.trim() || 'Consultas',
+    motivo: $('#motivo-texto').value.trim(),
+  };
+  const orden = $('#motivo-orden').value.trim();
+  if (orden) datos.orden = Number(orden);
+
+  const boton = $('#btn-guardar-motivo');
+  const estado = $('#motivos-form-estado');
+  setBusy(boton, true, 'Guardando…');
+  try {
+    if (id) {
+      await api.patch(`/api/motivos/${encodeURIComponent(id)}`, datos);
+      toast('Motivo actualizado', 'success');
+    } else {
+      await api.post('/api/motivos', datos);
+      toast('Motivo agregado', 'success');
+    }
+    setBusy(boton, false);
+    await Promise.all([cargarMotivosAdmin(), cargarMotivos()]);
+    limpiarFormularioMotivo();
+    estado.textContent = id ? 'Motivo actualizado.' : 'Motivo agregado al catálogo.';
+  } catch (error) {
+    setBusy(boton, false);
+    estado.textContent = error.message;
+    toast(error.message, 'error');
+  }
+}
+
+async function desactivarMotivo(id) {
+  const fila = motivosAdmin.find((item) => item.id === id);
+  if (!fila) return;
+  const confirmado = window.confirm(
+    `¿Desactivar el motivo “${fila.motivo}”? Dejará de ofrecerse en nuevas citas, pero las citas anteriores conservan su texto.`
+  );
+  if (!confirmado) return;
+
+  try {
+    await api.delete(`/api/motivos/${encodeURIComponent(id)}`);
+    toast('Motivo desactivado', 'success');
+    await Promise.all([cargarMotivosAdmin(), cargarMotivos()]);
+    if ($('#motivo-id').value === id) limpiarFormularioMotivo();
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+}
+
+async function reactivarMotivo(id) {
+  try {
+    await api.patch(`/api/motivos/${encodeURIComponent(id)}`, { activo: 1 });
+    toast('Motivo reactivado', 'success');
+    await Promise.all([cargarMotivosAdmin(), cargarMotivos()]);
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+}
+
+function abrirMotivoOtro() {
+  const panel = $('#motivo-otro-panel');
+  if (!panel.hidden) {
+    cerrarMotivoOtro();
+    return;
+  }
+  const puedeCatalogo = puede(estadoPagina.usuario, 'agenda.motivos');
+  $('#motivo-otro-guardar-wrap').hidden = !puedeCatalogo;
+  const campoGrupo = $('#motivo-otro-grupo').closest('.field');
+  if (campoGrupo) campoGrupo.hidden = !puedeCatalogo;
+  panel.hidden = false;
+  $('#btn-motivo-otro').setAttribute('aria-expanded', 'true');
+  $('#motivo-otro-texto').focus();
+}
+
+function cerrarMotivoOtro() {
+  $('#motivo-otro-panel').hidden = true;
+  $('#btn-motivo-otro').setAttribute('aria-expanded', 'false');
+  $('#motivo-otro-texto').value = '';
+  $('#motivo-otro-guardar').checked = false;
+}
+
+async function usarMotivoOtro() {
+  const texto = $('#motivo-otro-texto').value.trim();
+  if (!texto) {
+    toast('Escribe el motivo personalizado', 'error');
+    $('#motivo-otro-texto').focus();
+    return;
+  }
+
+  const puedeCatalogo = puede(estadoPagina.usuario, 'agenda.motivos');
+  const guardar = puedeCatalogo && !$('#motivo-otro-guardar-wrap').hidden && $('#motivo-otro-guardar').checked;
+  if (guardar) {
+    const boton = $('#btn-motivo-otro-usar');
+    setBusy(boton, true, 'Guardando…');
+    try {
+      await api.post('/api/motivos', {
+        grupo: $('#motivo-otro-grupo').value || 'Consultas',
+        motivo: texto,
+      });
+      toast('Motivo guardado en el catálogo', 'success');
+      await cargarMotivos();
+    } catch (error) {
+      if (error.status !== 409) {
+        setBusy(boton, false);
+        toast(error.message, 'error');
+        return;
+      }
+      toast('Ese motivo ya existe en el catálogo; se usará en la cita.', 'info');
+    }
+    setBusy(boton, false);
+  }
+
+  $('#cita-motivo').value = texto;
+  cerrarMotivoOtro();
+  $('#cita-motivo').focus();
+}
+
 
 async function cargarHorario() {
   try {
@@ -258,17 +514,15 @@ function horarioDelDia(fecha) {
 
 async function cargarCitas() {
   const params = new URLSearchParams();
-  const q = $('#buscar').value.trim();
   const estado = $('#filtro-estado').value;
   const medicoId = $('#filtro-medico').value;
   const fecha = $('#fecha-agenda').value;
-  const filtrosActivos = [q, estado, medicoId].filter(Boolean).length;
+  const filtrosActivos = [estado, medicoId].filter(Boolean).length;
   const botonFiltros = $('#btn-filtros');
   if (botonFiltros) {
     botonFiltros.textContent = filtrosActivos ? `Filtros (${filtrosActivos})` : 'Filtros';
   }
 
-  if (q) params.set('q', q);
   if (estado) params.set('estado', estado);
   if (medicoId) params.set('medicoId', medicoId);
 
@@ -1419,6 +1673,7 @@ async function buscarPacientes(q) {
 function abrirNueva(paciente = null, hora = '09:00', opciones = {}) {
   const formulario = $('#form-cita');
   formulario.reset();
+  cerrarMotivoOtro();
   const tipo = ['normal', 'extra', 'emergencia'].includes(opciones.tipo)
     ? opciones.tipo
     : 'normal';
@@ -1625,6 +1880,13 @@ async function cancelarCita(cita) {
 
 function conectarEventos() {
   $('#btn-nueva-cita').addEventListener('click', () => abrirNueva());
+  $('#btn-motivos')?.addEventListener('click', () => abrirMotivos());
+
+  $('#form-motivo')?.addEventListener('submit', guardarMotivo);
+  $('#btn-cancelar-motivo')?.addEventListener('click', () => limpiarFormularioMotivo());
+  $('#btn-motivo-otro')?.addEventListener('click', () => abrirMotivoOtro());
+  $('#btn-motivo-otro-usar')?.addEventListener('click', () => usarMotivoOtro());
+  $('#dlg-motivos')?.addEventListener('close', () => limpiarFormularioMotivo());
 
   $('#btn-paciente-nueva').addEventListener('click', () => {
     $('#cita-paciente').value = '';
@@ -1662,19 +1924,13 @@ function conectarEventos() {
     panel.hidden = !panel.hidden;
     $('#btn-filtros').classList.toggle('is-active', !panel.hidden);
     $('#btn-filtros').setAttribute('aria-expanded', String(!panel.hidden));
-    if (!panel.hidden) $('#buscar').focus();
+    if (!panel.hidden) $('#filtro-estado').focus();
   });
 
   $('#btn-limpiar-filtros').addEventListener('click', () => {
-    $('#buscar').value = '';
     $('#filtro-estado').value = '';
     $('#filtro-medico').value = '';
     cargarCitas();
-  });
-
-  $('#buscar').addEventListener('input', () => {
-    clearTimeout(estadoPagina.temporizador);
-    estadoPagina.temporizador = setTimeout(cargarCitas, 260);
   });
 
   $('#filtro-estado').addEventListener('change', cargarCitas);
@@ -1785,7 +2041,6 @@ function conectarEventos() {
   });
 
   alSalir(() => {
-    clearTimeout(estadoPagina.temporizador);
     clearTimeout(estadoPagina.pacientesTimer);
     document.removeEventListener('click', cerrarResultadosCita);
   });

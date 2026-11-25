@@ -1200,6 +1200,36 @@ if (
   console.log('[db] migración aplicada: permisos del secretario/a');
 }
 
+// Migración de datos aditiva: permiso para administrar el catálogo de motivos de
+// consulta. Solo agrega filas faltantes de role_permissions a los roles que lo
+// necesitan; nunca borra ni reemplaza permisos existentes. La caché de permisos
+// se llena con la primera petición, por lo que estas migraciones de arranque no
+// necesitan invalidarla (mismo patrón que las migraciones anteriores).
+if (
+  !db
+    .prepare("SELECT 1 FROM settings WHERE clave = 'migracion_permiso_agenda_motivos_v1'")
+    .get()
+) {
+  const insertarPermiso = db.prepare(
+    'INSERT OR IGNORE INTO role_permissions (role_slug, permiso) VALUES (?, ?)'
+  );
+  const existeRol = db.prepare('SELECT 1 FROM roles WHERE slug = ?');
+  db.exec('BEGIN');
+  try {
+    for (const rol of ['admin', 'operador', 'enfermero']) {
+      if (existeRol.get(rol)) insertarPermiso.run(rol, 'agenda.motivos');
+    }
+    db.prepare(
+      'INSERT INTO settings (clave, valor, actualizado_en) VALUES (?, ?, ?)'
+    ).run('migracion_permiso_agenda_motivos_v1', '1', new Date().toISOString());
+    db.exec('COMMIT');
+  } catch (error) {
+    db.exec('ROLLBACK');
+    throw error;
+  }
+  console.log('[db] migración aplicada: permiso agenda.motivos');
+}
+
 // Clasificación de auditoría por módulo y tipo de acción (aditiva).
 const columnasAuditoria = new Set(
   db.prepare('PRAGMA table_info(audit_log)').all().map((columna) => columna.name)
