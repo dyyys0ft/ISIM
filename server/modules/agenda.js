@@ -96,10 +96,30 @@ function pacienteValido(patientId) {
   if (!id) throw new HttpError(400, 'Selecciona una paciente válida');
 
   const paciente = db
-    .prepare('SELECT id, nombres, apellidos, cedula FROM patients WHERE id = ? AND activo = 1')
+    .prepare(
+      `SELECT id, nombres, apellidos, cedula, consentimiento_evidencia_path
+       FROM patients WHERE id = ? AND activo = 1`
+    )
     .get(id);
   if (!paciente) throw new HttpError(400, 'Selecciona una paciente válida');
   return paciente;
+}
+
+/**
+ * La creación de cita solo devuelve el resumen mínimo de la paciente y si su
+ * evidencia LOPDP está pendiente. Evita que la agenda tenga que pedir la ficha
+ * completa solo para mostrar el aviso.
+ */
+function resumenPacienteCita(paciente) {
+  return {
+    id: paciente.id,
+    nombres: paciente.nombres,
+    apellidos: paciente.apellidos,
+    cedula: paciente.cedula,
+    consentimientoPendienteEvidencia: !String(
+      paciente.consentimiento_evidencia_path ?? ''
+    ).trim(),
+  };
 }
 
 function hayConflicto({
@@ -1193,7 +1213,7 @@ export function routes(router) {
       medicoId,
       fechaHora,
     });
-    ctx.ok({ id }, 201);
+    ctx.ok({ id, paciente: resumenPacienteCita(paciente) }, 201);
 
     // Envío automático opcional; no bloquea la respuesta de creación.
     if (whatsappAuto() && !['cancelada', 'no_asistio'].includes(estado)) {

@@ -6,10 +6,12 @@ import { crearEntornoE2E } from './lib/e2e-harness.mjs';
 
 /**
  * E2E de privacidad del autocomplete y respuestas fuera de orden:
- * - `/api/patients/search` devuelve solo el DTO mínimo de selección;
- * - el detalle autorizado sigue disponible al seleccionar;
+ * - `/api/patients/search` y `/api/patients/:id/summary` devuelven solo el DTO
+ *   mínimo de selección;
+ * - elegir un resultado no pide el detalle completo de la paciente;
  * - una respuesta antigua no reemplaza resultados nuevos;
- * - al borrar/acortar/cerrar se limpian los resultados pendientes;
+ * - al borrar/acortar/cerrar o hacer clic fuera se limpian los resultados
+ *   pendientes;
  * - el flujo de paciente menor sigue mostrando su aviso.
  */
 
@@ -166,7 +168,23 @@ async function main() {
   assert.equal(detalle.telefono, '0991234567', 'El detalle autorizado conserva los datos');
   assert.equal(detalle.alergias, 'Penicilina');
   assert.ok(detalle.representantes.length >= 1);
-  console.log('✓ DTO mínimo de búsqueda y detalle autorizado intacto');
+
+  const resumenPorId = await admin(
+    `/api/patients/${encodeURIComponent(adulto.id)}/summary`
+  );
+  assert.deepEqual(
+    Object.keys(resumenPorId).sort(),
+    ['apellidos', 'cedula', 'es_menor', 'fecha_nacimiento', 'id', 'nombres'],
+    'El resumen por id debe usar la misma lista blanca que la búsqueda'
+  );
+  assert.equal(resumenPorId.id, adulto.id);
+  const resumenPorIdMenor = await admin(
+    `/api/patients/${encodeURIComponent(menor.id)}/summary`
+  );
+  assert.equal(resumenPorIdMenor.es_menor, true);
+  assert.ok(!('alergias' in resumenPorIdMenor));
+  assert.ok(!('representante1_nombre' in resumenPorIdMenor));
+  console.log('✓ DTO mínimo de búsqueda, resumen por id y detalle autorizado intacto');
 
   const ejecutable = encontrarNavegador();
   if (!ejecutable) {
@@ -188,16 +206,24 @@ async function main() {
   await abrirCupo(pagina);
 
   const peticionesBusqueda = [];
+  const peticionesDetalle = [];
   let retenerPrimera = true;
   let retenerCorta = false;
   let retenerCierre = false;
+  let retenerFuera = false;
   let primeraRetenida = null;
   let cortaRetenida = null;
   let cierreRetenido = null;
+  let fueraRetenida = null;
 
   await pagina.setRequestInterception(true);
   pagina.on('request', (peticion) => {
     const url = peticion.url();
+    const ruta = new URL(url).pathname;
+    // Cualquier GET /api/patients/<id> (sin subrutas) es lectura de detalle.
+    if (/^\/api\/patients\/[^/]+$/.test(ruta) && ruta !== '/api/patients/search') {
+      peticionesDetalle.push(ruta);
+    }
     if (url.includes('/api/patients/search')) {
       peticionesBusqueda.push(url);
       if (retenerPrimera && url.includes('AUTOPRIV')) {
@@ -213,6 +239,11 @@ async function main() {
       if (retenerCierre && url.includes('AUTOMENOR')) {
         retenerCierre = false;
         cierreRetenido = peticion;
+        return;
+      }
+      if (retenerFuera && url.includes('AUTOPRIV')) {
+        retenerFuera = false;
+        fueraRetenida = peticion;
         return;
       }
     }
@@ -324,12 +355,67 @@ async function main() {
     () => document.querySelector('#cita-menor-aviso')?.hidden === false,
     { timeout: 15000 }
   );
-  console.log('✓ Selección de menor y aviso de representante operativos');
+  const textoSeleccion = await pagina.$eval(
+    '#cita-paciente-seleccionado',
+    (nodo) => nodo.textContent || ''
+  );
+  assert.match(textoSeleccion, /MENOR AUTOCOMPLETE/i);
+  assert.ok(
+    !/alergias/i.test(textoSeleccion),
+    'La selección no debe mostrar campos clínicos de la paciente'
+  );
+  assert.deepEqual(
+    peticionesDetalle,
+    [],
+    'Elegir un resultado del autocomplete no debe pedir /api/patients/<id>'
+  );
+  console.log('✓ Selección de menor sin detalle completo y aviso de representante operativos');
+
+  // 5. Clic fuera del buscador invalida la petición pendiente y vacía la lista.
+  retenerFuera = true;
+  const esperaFuera = pagina.waitForRequest(
+    (peticion) =>
+      peticion.url().includes('/api/patients/search') && peticion.url().includes('AUTOPRIV'),
+    { timeout: 15000 }
+  );
+  await escribirBusqueda(pagina, `AUTOPRIV ${sello}`);
+  const peticionFuera = await esperaFuera;
+  await pagina.click('#titulo-cita');
+  await pagina.waitForFunction(
+    () => {
+      const nodo = document.querySelector('#resultados-pacientes-cita');
+      return nodo?.hidden === true && (nodo.innerText || '').trim() === '';
+    },
+    { timeout: 10000 }
+  );
+  await peticionFuera.continue();
+  await esperar(800);
+  assert.equal(
+    await pagina.$eval('#resultados-pacientes-cita', (nodo) => nodo.hidden),
+    true,
+    'El clic fuera debe dejar la lista oculta'
+  );
+  assert.equal(
+    await pagina.$eval('#resultados-pacientes-cita', (nodo) => (nodo.innerText || '').trim()),
+    '',
+    'Una respuesta liberada tras el clic fuera no debe reaparecer'
+  );
+  assert.deepEqual(
+    peticionesDetalle,
+    [],
+    'El clic fuera tampoco debe pedir el detalle completo'
+  );
+  console.log('✓ Clic fuera invalida la búsqueda pendiente');
 
   assert.ok(
     peticionesBusqueda.length >= 3 &&
       peticionesBusqueda.every((url) => url.includes('/api/patients/search')),
     'El autocomplete debe usar exclusivamente el endpoint de búsqueda mínimo'
+  );
+  assert.deepEqual(
+    peticionesDetalle,
+    [],
+    'La agenda no debe leer /api/patients/<id> de forma automática'
   );
 
   await pagina.close();
@@ -340,8 +426,10 @@ async function main() {
       {
         dto: ['id', 'nombres', 'apellidos', 'cedula', 'fecha_nacimiento', 'es_menor'],
         sinDatosSensibles: true,
+        sinDetalleAutomatico: true,
         respuestasFueraDeOrden: true,
         consultaCorta: true,
+        clicFueraInvalida: true,
         cierreDialogo: true,
         menorOperativo: true,
       },

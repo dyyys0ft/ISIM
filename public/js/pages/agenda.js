@@ -111,6 +111,9 @@ function estadoConsentimiento(cita) {
 /** El pendiente LOPDP se deriva de la evidencia, nunca de la marca de fecha. */
 function pacienteSinEvidencia(paciente) {
   if (!paciente?.id) return false;
+  if (typeof paciente.consentimientoPendienteEvidencia === 'boolean') {
+    return paciente.consentimientoPendienteEvidencia;
+  }
   if (paciente.consentimientoEstado) {
     return !paciente.consentimientoEstado.evidencia;
   }
@@ -164,19 +167,21 @@ function subirEvidenciaAviso() {
   abrirCargaEvidencia({
     paciente: aviso.paciente,
     onSubida: async () => {
-      const actualizado = await api
-        .get(`/api/patients/${encodeURIComponent(aviso.paciente.id)}`)
-        .catch(() => null);
-      if (actualizado) {
-        estadoPagina.pacienteSeleccionado = actualizado;
-        aviso.paciente = actualizado;
-        if (!pacienteSinEvidencia(actualizado)) {
-          ocultarAvisoLopdp();
-          toast('Evidencia cargada: pendiente LOPDP resuelto', 'success');
-        } else {
-          mostrarAvisoLopdp(actualizado, aviso.citaId);
-        }
-      }
+      // La subida ya fue confirmada por la API: no hace falta leer la ficha
+      // completa para reflejar el cambio en el aviso.
+      aviso.paciente = {
+        ...aviso.paciente,
+        consentimientoPendienteEvidencia: false,
+        consentimientoEstado: {
+          ...(aviso.paciente.consentimientoEstado || {}),
+          evidencia: true,
+          pendienteEvidencia: false,
+          estado: 'con_evidencia',
+        },
+      };
+      estadoPagina.pacienteSeleccionado = aviso.paciente;
+      ocultarAvisoLopdp();
+      toast('Evidencia cargada: pendiente LOPDP resuelto', 'success');
       await cargarCitas();
     },
   });
@@ -1698,10 +1703,13 @@ function cancelarBusquedaPacientes() {
   }
 }
 
-async function seleccionarPaciente(pacienteResumen) {
+function seleccionarPaciente(pacienteResumen) {
   if (!pacienteResumen?.id) return;
   cancelarBusquedaPacientes();
-  estadoPagina.pacienteSeleccionado = pacienteResumen;
+  // Solo se conserva el resumen mínimo de selección: id, nombres, apellidos,
+  // cédula y fecha de nacimiento. La ficha clínica se consulta únicamente al
+  // abrirla de forma explícita, nunca al agendar.
+  estadoPagina.pacienteSeleccionado = { ...pacienteResumen };
   $('#cita-paciente').value = pacienteResumen.id;
   $('#cita-paciente-busqueda').value = `${pacienteResumen.apellidos || ''} ${
     pacienteResumen.nombres || ''
@@ -1713,25 +1721,6 @@ async function seleccionarPaciente(pacienteResumen) {
   $('#cita-menor-aviso').hidden = !(
     pacienteResumen.es_menor || esMenorFecha(pacienteResumen.fecha_nacimiento)
   );
-
-  // El resumen de búsqueda es mínimo; el detalle autorizado completa alergias,
-  // fecha de nacimiento y estado de evidencia para el resto del flujo.
-  try {
-    const detalle = await api.get(
-      `/api/patients/${encodeURIComponent(pacienteResumen.id)}`
-    );
-    if ($('#cita-paciente').value !== pacienteResumen.id) return;
-    estadoPagina.pacienteSeleccionado = detalle;
-    $('#cita-paciente-busqueda').value = `${detalle.apellidos} ${detalle.nombres} — ${detalle.cedula}`;
-    $('#cita-paciente-seleccionado').textContent = `Seleccionada: ${detalle.nombres} ${
-      detalle.apellidos
-    }${detalle.alergias ? ` · Alergias: ${detalle.alergias}` : ''}`;
-    $('#cita-menor-aviso').hidden = !(
-      detalle.es_menor || esMenorFecha(detalle.fecha_nacimiento)
-    );
-  } catch {
-    // La selección por ID sigue siendo válida; el backend valida al guardar.
-  }
 }
 
 function renderResultadosPacientes(pacientes) {
@@ -1848,6 +1837,7 @@ function abrirEditar(cita) {
     nombres: cita.nombres,
     apellidos: cita.apellidos,
     cedula: cita.paciente_cedula,
+    es_menor: cita.es_menor,
   };
   seleccionarPaciente(paciente);
 
@@ -1919,13 +1909,18 @@ async function guardarCita(evento) {
           : '',
       });
       patientId = creada.id;
-      pacienteNuevo = await api.get(`/api/patients/${encodeURIComponent(patientId)}`).catch(() => ({
+      // La admisión ya tiene los datos mínimos: no se consulta la ficha
+      // completa ni para el aviso; la cita confirmará el estado LOPDP.
+      pacienteNuevo = {
         id: patientId,
         cedula,
         nombres,
         apellidos,
-        consentimiento_datos: consentimientoFecha,
-      }));
+        fecha_nacimiento: nacimiento,
+        es_menor: menor,
+        consentimientoPendienteEvidencia: true,
+      };
+      estadoPagina.pacienteSeleccionado = pacienteNuevo;
       $('#cita-paciente').value = patientId;
     }
 
@@ -1957,15 +1952,15 @@ async function guardarCita(evento) {
 
     // Sin interrupción modal: el pendiente LOPDP se muestra como aviso no modal
     // y se resuelve con la evidencia firmada, no con la marca de consentimiento.
+    // La respuesta de la cita trae el resumen mínimo y el estado de evidencia,
+    // así que no se lee la ficha completa de la paciente.
     if (!id) {
-      let pacienteParaAviso = pacienteNuevo || estadoPagina.pacienteSeleccionado;
-      if (!pacienteNuevo && patientId && !pacienteParaAviso?.consentimientoEstado) {
-        pacienteParaAviso = await api
-          .get(`/api/patients/${encodeURIComponent(patientId)}`)
-          .catch(() => null);
-        if (pacienteParaAviso) estadoPagina.pacienteSeleccionado = pacienteParaAviso;
-      }
-      if (pacienteParaAviso) {
+      const resumenCita = citaCreada?.paciente;
+      const pacienteParaAviso = resumenCita
+        ? { ...(pacienteNuevo || estadoPagina.pacienteSeleccionado || {}), ...resumenCita }
+        : pacienteNuevo || estadoPagina.pacienteSeleccionado;
+      if (pacienteParaAviso?.id) {
+        estadoPagina.pacienteSeleccionado = pacienteParaAviso;
         mostrarAvisoLopdp(pacienteParaAviso, citaCreada?.id || null);
       }
     }
@@ -2167,9 +2162,10 @@ function conectarEventos() {
 }
 
 function cerrarResultadosCita(evento) {
-  if (!evento.target.closest('#cita-paciente-busqueda, #resultados-pacientes-cita')) {
-    $('#resultados-pacientes-cita').hidden = true;
-  }
+  if (evento.target.closest('#cita-paciente-busqueda, #resultados-pacientes-cita')) return;
+  // Clic fuera: invalida la búsqueda en curso (secuencia y temporizador) y
+  // vacía la lista, para que una respuesta lenta no reaparezca después.
+  cancelarBusquedaPacientes();
 }
 
 async function vistaInicialAgenda() {
@@ -2213,8 +2209,9 @@ async function init() {
 
   if (estadoPagina.pacienteParam && puede(estadoPagina.usuario, 'agenda.gestionar')) {
     try {
+      // Enlace directo desde Pacientes: solo se necesita el resumen mínimo.
       const paciente = await api.get(
-        `/api/patients/${encodeURIComponent(estadoPagina.pacienteParam)}`
+        `/api/patients/${encodeURIComponent(estadoPagina.pacienteParam)}/summary`
       );
       abrirNueva(paciente);
     } catch {

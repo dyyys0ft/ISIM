@@ -371,6 +371,22 @@ export function routes(router) {
       }));
   });
 
+  // Resumen por id para enlaces que abren la agenda con una paciente concreta.
+  // Comparte la lista blanca de la búsqueda y nunca expone la ficha completa.
+  router.get('/api/patients/:id/summary', (ctx) => {
+    const user = requireUser(ctx);
+    exigir(user, PERMISOS.PACIENTES_VER);
+    const fila = db
+      .prepare(
+        `SELECT id, nombres, apellidos, cedula, fecha_nacimiento
+         FROM patients
+         WHERE id = ? AND activo = 1`
+      )
+      .get(ctx.params.id);
+    if (!fila) throw new HttpError(404, 'Paciente no encontrado');
+    return { ...fila, es_menor: esMenorDeEdad(fila.fecha_nacimiento) };
+  });
+
   router.get('/api/patients/:id', (ctx) => {
     const user = requireUser(ctx);
     exigir(user, PERMISOS.PACIENTES_VER);
