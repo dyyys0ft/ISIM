@@ -3,7 +3,7 @@ import { $, $$, escapeHtml, setBusy, toast } from '../ui.js';
 import { initChrome } from '../chrome.js';
 import { puede } from '../permisos.js';
 import { alSalir } from '../navegacion.js';
-import { abrirAccionesLopdp } from '../lopdp.js';
+import { abrirCargaEvidencia, abrirSelectorConsentimiento } from '../lopdp.js';
 
 const ESTADOS_CITA = {
   programada: { texto: 'Programada', clase: 'programada' },
@@ -40,6 +40,7 @@ const HORARIO_POR_DEFECTO = {
 };
 
 let motivosPorNombre = new Map();
+let motivosAdmin = [];
 
 const estadoPagina = {
   usuario: null,
@@ -50,11 +51,11 @@ const estadoPagina = {
   pacienteSeleccionado: null,
   pacientesTimer: null,
   pacientesSeq: 0,
-  temporizador: null,
   modoProximas: false,
   vista: 'lista',
   mes: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
   citaSeleccionada: null,
+  avisoLopdp: null,
   pacienteParam: new URLSearchParams(location.search).get('patientId') || '',
 };
 
@@ -105,6 +106,85 @@ function estadoConsentimiento(cita) {
     return { clase: 'pendiente', texto: 'Consentimiento sin firmar', corto: '⚠ Sin firmar' };
   }
   return { clase: 'pendiente', texto: 'Consentimiento sin generar', corto: '⚠ Sin consentimiento' };
+}
+
+/** El pendiente LOPDP se deriva de la evidencia, nunca de la marca de fecha. */
+function pacienteSinEvidencia(paciente) {
+  if (!paciente?.id) return false;
+  if (typeof paciente.consentimientoPendienteEvidencia === 'boolean') {
+    return paciente.consentimientoPendienteEvidencia;
+  }
+  if (paciente.consentimientoEstado) {
+    return !paciente.consentimientoEstado.evidencia;
+  }
+  return !paciente.consentimientoEvidencia;
+}
+
+function ocultarAvisoLopdp() {
+  estadoPagina.avisoLopdp = null;
+  const region = $('#aviso-lopdp-agenda');
+  if (region) region.hidden = true;
+}
+
+function mostrarAvisoLopdp(paciente, citaId = null) {
+  const region = $('#aviso-lopdp-agenda');
+  if (!region || !paciente?.id || !pacienteSinEvidencia(paciente)) {
+    ocultarAvisoLopdp();
+    return;
+  }
+
+  estadoPagina.avisoLopdp = { paciente, citaId };
+  const nombre = `${paciente.nombres || ''} ${paciente.apellidos || ''}`.trim();
+  const cedula = paciente.cedula ? ` (C.I. ${paciente.cedula})` : '';
+  $('#aviso-lopdp-texto').textContent =
+    `${nombre}${cedula} no tiene evidencia firmada cargada. ` +
+    'La cita ya quedó registrada; el pendiente se resuelve al subir la evidencia.';
+  $('#aviso-lopdp-ficha').href = `/paciente.html?id=${encodeURIComponent(
+    paciente.id
+  )}&tab=datos`;
+  $('#aviso-lopdp-subir').hidden = !puede(estadoPagina.usuario, 'pacientes.editar');
+  region.hidden = false;
+}
+
+async function previsualizarLopdpAviso() {
+  const aviso = estadoPagina.avisoLopdp;
+  if (!aviso) return;
+  try {
+    await abrirSelectorConsentimiento({
+      paciente: aviso.paciente,
+      citaId: aviso.citaId,
+      puedeVerDocumentos: puede(estadoPagina.usuario, 'documentos.ver'),
+      puedeCrearDocumentos: puede(estadoPagina.usuario, 'documentos.crear'),
+    });
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+}
+
+function subirEvidenciaAviso() {
+  const aviso = estadoPagina.avisoLopdp;
+  if (!aviso) return;
+  abrirCargaEvidencia({
+    paciente: aviso.paciente,
+    onSubida: async () => {
+      // La subida ya fue confirmada por la API: no hace falta leer la ficha
+      // completa para reflejar el cambio en el aviso.
+      aviso.paciente = {
+        ...aviso.paciente,
+        consentimientoPendienteEvidencia: false,
+        consentimientoEstado: {
+          ...(aviso.paciente.consentimientoEstado || {}),
+          evidencia: true,
+          pendienteEvidencia: false,
+          estado: 'con_evidencia',
+        },
+      };
+      estadoPagina.pacienteSeleccionado = aviso.paciente;
+      ocultarAvisoLopdp();
+      toast('Evidencia cargada: pendiente LOPDP resuelto', 'success');
+      await cargarCitas();
+    },
+  });
 }
 
 function claveDia(iso) {
@@ -226,10 +306,266 @@ async function cargarMotivos() {
     motivosPorNombre = new Map(
       grupos.flatMap((grupo) => grupo.motivos.map((item) => [item.motivo, grupo.grupo]))
     );
+    actualizarGruposMotivo(grupos);
   } catch {
     motivosPorNombre = new Map();
   }
 }
+
+/** Mantiene sincronizados los grupos del catálogo y del texto libre. */
+function actualizarGruposMotivo(grupos) {
+  const nombres = [...new Set(grupos.map((grupo) => grupo.grupo).filter(Boolean))];
+  const lista = nombres.length ? nombres : ['Consultas'];
+  const select = $('#motivo-otro-grupo');
+  if (select) {
+    const actual = select.value;
+    select.innerHTML = lista
+      .map((grupo) => `<option value="${escapeHtml(grupo)}">${escapeHtml(grupo)}</option>`)
+      .join('');
+    if (lista.includes(actual)) select.value = actual;
+  }
+  const datalist = $('#motivos-grupos');
+  if (datalist) {
+    datalist.innerHTML = lista
+      .map((grupo) => `<option value="${escapeHtml(grupo)}"></option>`)
+      .join('');
+  }
+}
+
+async function abrirMotivos() {
+  limpiarFormularioMotivo();
+  $('#dlg-motivos').showModal();
+  await cargarMotivosAdmin();
+}
+
+async function cargarMotivosAdmin() {
+  const contenedor = $('#motivos-lista');
+  contenedor.innerHTML = '<p class="hint">Cargando motivos…</p>';
+  try {
+    motivosAdmin = await api.get('/api/motivos/admin');
+    renderMotivosAdmin();
+  } catch (error) {
+    contenedor.innerHTML = `<p class="muted small">${escapeHtml(error.message)}</p>`;
+    toast(error.message, 'error');
+  }
+}
+
+function renderMotivosAdmin() {
+  const contenedor = $('#motivos-lista');
+  if (!motivosAdmin.length) {
+    contenedor.innerHTML = '<p class="hint">Todavía no hay motivos registrados.</p>';
+    return;
+  }
+
+  const grupos = new Map();
+  for (const fila of motivosAdmin) {
+    const grupo = fila.grupo || 'Consultas';
+    if (!grupos.has(grupo)) grupos.set(grupo, []);
+    grupos.get(grupo).push(fila);
+  }
+
+  contenedor.innerHTML = [...grupos.entries()]
+    .map(
+      ([grupo, filas]) => `
+      <section class="motivo-grupo" aria-label="${escapeHtml(grupo)}">
+        <h4 class="motivo-grupo__titulo">${escapeHtml(grupo)}</h4>
+        ${filas
+          .map((fila) => {
+            const activo = Number(fila.activo) === 1;
+            return `<article class="motivo-fila ${activo ? '' : 'motivo-fila--inactivo'}" data-id="${escapeHtml(
+              fila.id
+            )}">
+              <div class="motivo-fila__texto">
+                <strong>${escapeHtml(fila.motivo)}</strong>
+                <span class="motivo-fila__meta">
+                  Orden ${Number(fila.orden) || 1}
+                  ${
+                    activo
+                      ? '<span class="badge badge--programada">Activo</span>'
+                      : '<span class="badge badge--cancelada">Inactivo</span>'
+                  }
+                </span>
+              </div>
+              <div class="motivo-fila__acciones">
+                <button class="btn btn--sm" type="button" data-editar-motivo aria-label="Editar ${escapeHtml(
+                  fila.motivo
+                )}">Editar</button>
+                ${
+                  activo
+                    ? `<button class="btn btn--sm btn--danger" type="button" data-desactivar-motivo aria-label="Desactivar ${escapeHtml(
+                        fila.motivo
+                      )}">✕</button>`
+                    : `<button class="btn btn--sm" type="button" data-reactivar-motivo aria-label="Reactivar ${escapeHtml(
+                        fila.motivo
+                      )}">Reactivar</button>`
+                }
+              </div>
+            </article>`;
+          })
+          .join('')}
+      </section>`
+    )
+    .join('');
+
+  for (const boton of $$('#motivos-lista [data-editar-motivo]')) {
+    const id = boton.closest('[data-id]')?.dataset.id;
+    boton.addEventListener('click', () => editarMotivo(id));
+  }
+  for (const boton of $$('#motivos-lista [data-desactivar-motivo]')) {
+    const id = boton.closest('[data-id]')?.dataset.id;
+    boton.addEventListener('click', () => desactivarMotivo(id));
+  }
+  for (const boton of $$('#motivos-lista [data-reactivar-motivo]')) {
+    const id = boton.closest('[data-id]')?.dataset.id;
+    boton.addEventListener('click', () => reactivarMotivo(id));
+  }
+}
+
+function limpiarFormularioMotivo() {
+  const formulario = $('#form-motivo');
+  formulario.reset();
+  $('#motivo-id').value = '';
+  $('#motivo-grupo').value = 'Consultas';
+  $('#motivo-orden').value = '';
+  $('#btn-guardar-motivo').textContent = 'Agregar motivo';
+  $('#btn-cancelar-motivo').hidden = true;
+  $('#motivos-form-estado').textContent = '';
+}
+
+function editarMotivo(id) {
+  const fila = motivosAdmin.find((item) => item.id === id);
+  if (!fila) return;
+  $('#motivo-id').value = fila.id;
+  $('#motivo-grupo').value = fila.grupo || 'Consultas';
+  $('#motivo-texto').value = fila.motivo;
+  $('#motivo-orden').value = String(fila.orden || 1);
+  $('#btn-guardar-motivo').textContent = 'Guardar cambios';
+  $('#btn-cancelar-motivo').hidden = false;
+  $('#motivos-form-estado').textContent = `Editando “${fila.motivo}”.`;
+  $('#motivo-texto').focus();
+}
+
+async function guardarMotivo(evento) {
+  evento.preventDefault();
+  const formulario = $('#form-motivo');
+  if (!formulario.reportValidity()) return;
+
+  const id = $('#motivo-id').value;
+  const datos = {
+    grupo: $('#motivo-grupo').value.trim() || 'Consultas',
+    motivo: $('#motivo-texto').value.trim(),
+  };
+  const orden = $('#motivo-orden').value.trim();
+  if (orden) datos.orden = Number(orden);
+
+  const boton = $('#btn-guardar-motivo');
+  const estado = $('#motivos-form-estado');
+  setBusy(boton, true, 'Guardando…');
+  try {
+    if (id) {
+      await api.patch(`/api/motivos/${encodeURIComponent(id)}`, datos);
+      toast('Motivo actualizado', 'success');
+    } else {
+      await api.post('/api/motivos', datos);
+      toast('Motivo agregado', 'success');
+    }
+    setBusy(boton, false);
+    await Promise.all([cargarMotivosAdmin(), cargarMotivos()]);
+    limpiarFormularioMotivo();
+    estado.textContent = id ? 'Motivo actualizado.' : 'Motivo agregado al catálogo.';
+  } catch (error) {
+    setBusy(boton, false);
+    estado.textContent = error.message;
+    toast(error.message, 'error');
+  }
+}
+
+async function desactivarMotivo(id) {
+  const fila = motivosAdmin.find((item) => item.id === id);
+  if (!fila) return;
+  const confirmado = window.confirm(
+    `¿Desactivar el motivo “${fila.motivo}”? Dejará de ofrecerse en nuevas citas, pero las citas anteriores conservan su texto.`
+  );
+  if (!confirmado) return;
+
+  try {
+    await api.delete(`/api/motivos/${encodeURIComponent(id)}`);
+    toast('Motivo desactivado', 'success');
+    await Promise.all([cargarMotivosAdmin(), cargarMotivos()]);
+    if ($('#motivo-id').value === id) limpiarFormularioMotivo();
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+}
+
+async function reactivarMotivo(id) {
+  try {
+    await api.patch(`/api/motivos/${encodeURIComponent(id)}`, { activo: 1 });
+    toast('Motivo reactivado', 'success');
+    await Promise.all([cargarMotivosAdmin(), cargarMotivos()]);
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+}
+
+function abrirMotivoOtro() {
+  const panel = $('#motivo-otro-panel');
+  if (!panel.hidden) {
+    cerrarMotivoOtro();
+    return;
+  }
+  const puedeCatalogo = puede(estadoPagina.usuario, 'agenda.motivos');
+  $('#motivo-otro-guardar-wrap').hidden = !puedeCatalogo;
+  const campoGrupo = $('#motivo-otro-grupo').closest('.field');
+  if (campoGrupo) campoGrupo.hidden = !puedeCatalogo;
+  panel.hidden = false;
+  $('#btn-motivo-otro').setAttribute('aria-expanded', 'true');
+  $('#motivo-otro-texto').focus();
+}
+
+function cerrarMotivoOtro() {
+  $('#motivo-otro-panel').hidden = true;
+  $('#btn-motivo-otro').setAttribute('aria-expanded', 'false');
+  $('#motivo-otro-texto').value = '';
+  $('#motivo-otro-guardar').checked = false;
+}
+
+async function usarMotivoOtro() {
+  const texto = $('#motivo-otro-texto').value.trim();
+  if (!texto) {
+    toast('Escribe el motivo personalizado', 'error');
+    $('#motivo-otro-texto').focus();
+    return;
+  }
+
+  const puedeCatalogo = puede(estadoPagina.usuario, 'agenda.motivos');
+  const guardar = puedeCatalogo && !$('#motivo-otro-guardar-wrap').hidden && $('#motivo-otro-guardar').checked;
+  if (guardar) {
+    const boton = $('#btn-motivo-otro-usar');
+    setBusy(boton, true, 'Guardando…');
+    try {
+      await api.post('/api/motivos', {
+        grupo: $('#motivo-otro-grupo').value || 'Consultas',
+        motivo: texto,
+      });
+      toast('Motivo guardado en el catálogo', 'success');
+      await cargarMotivos();
+    } catch (error) {
+      if (error.status !== 409) {
+        setBusy(boton, false);
+        toast(error.message, 'error');
+        return;
+      }
+      toast('Ese motivo ya existe en el catálogo; se usará en la cita.', 'info');
+    }
+    setBusy(boton, false);
+  }
+
+  $('#cita-motivo').value = texto;
+  cerrarMotivoOtro();
+  $('#cita-motivo').focus();
+}
+
 
 async function cargarHorario() {
   try {
@@ -258,17 +594,15 @@ function horarioDelDia(fecha) {
 
 async function cargarCitas() {
   const params = new URLSearchParams();
-  const q = $('#buscar').value.trim();
   const estado = $('#filtro-estado').value;
   const medicoId = $('#filtro-medico').value;
   const fecha = $('#fecha-agenda').value;
-  const filtrosActivos = [q, estado, medicoId].filter(Boolean).length;
+  const filtrosActivos = [estado, medicoId].filter(Boolean).length;
   const botonFiltros = $('#btn-filtros');
   if (botonFiltros) {
     botonFiltros.textContent = filtrosActivos ? `Filtros (${filtrosActivos})` : 'Filtros';
   }
 
-  if (q) params.set('q', q);
   if (estado) params.set('estado', estado);
   if (medicoId) params.set('medicoId', medicoId);
 
@@ -1351,26 +1685,41 @@ function cambiarVista(vista) {
 }
 
 function limpiarPaciente() {
+  cancelarBusquedaPacientes();
   estadoPagina.pacienteSeleccionado = null;
   $('#cita-paciente').value = '';
   $('#cita-paciente-busqueda').value = '';
   $('#cita-paciente-seleccionado').textContent = 'Escribe al menos 2 letras para buscar.';
-  $('#resultados-pacientes-cita').hidden = true;
-  $('#resultados-pacientes-cita').replaceChildren();
 }
 
-function seleccionarPaciente(paciente) {
-  estadoPagina.pacienteSeleccionado = paciente;
-  $('#cita-paciente').value = paciente.id;
-  $('#cita-paciente-busqueda').value = `${paciente.apellidos} ${paciente.nombres} — ${paciente.cedula}`;
-  $('#cita-paciente-seleccionado').textContent = `Seleccionada: ${paciente.nombres} ${paciente.apellidos}${
-    paciente.alergias ? ` · Alergias: ${paciente.alergias}` : ''
-  }`;
-  $('#resultados-pacientes-cita').hidden = true;
-  $('#resultados-pacientes-cita').replaceChildren();
+/** Invalida cualquier búsqueda en curso y limpia sus resultados visibles. */
+function cancelarBusquedaPacientes() {
+  estadoPagina.pacientesSeq += 1;
+  clearTimeout(estadoPagina.pacientesTimer);
+  const contenedor = $('#resultados-pacientes-cita');
+  if (contenedor) {
+    contenedor.hidden = true;
+    contenedor.replaceChildren();
+  }
+}
+
+function seleccionarPaciente(pacienteResumen) {
+  if (!pacienteResumen?.id) return;
+  cancelarBusquedaPacientes();
+  // Solo se conserva el resumen mínimo de selección: id, nombres, apellidos,
+  // cédula y fecha de nacimiento. La ficha clínica se consulta únicamente al
+  // abrirla de forma explícita, nunca al agendar.
+  estadoPagina.pacienteSeleccionado = { ...pacienteResumen };
+  $('#cita-paciente').value = pacienteResumen.id;
+  $('#cita-paciente-busqueda').value = `${pacienteResumen.apellidos || ''} ${
+    pacienteResumen.nombres || ''
+  } — ${pacienteResumen.cedula || ''}`;
+  $('#cita-paciente-seleccionado').textContent = `Seleccionada: ${
+    pacienteResumen.nombres || ''
+  } ${pacienteResumen.apellidos || ''}`;
   $('#cita-nueva-paciente').hidden = true;
   $('#cita-menor-aviso').hidden = !(
-    paciente.es_menor || esMenorFecha(paciente.fecha_nacimiento)
+    pacienteResumen.es_menor || esMenorFecha(pacienteResumen.fecha_nacimiento)
   );
 }
 
@@ -1399,16 +1748,19 @@ function renderResultadosPacientes(pacientes) {
   }
 }
 
-async function buscarPacientes(q) {
+async function buscarPacientes(q, secuencia = estadoPagina.pacientesSeq) {
   if (q.length < 2) {
-    $('#resultados-pacientes-cita').hidden = true;
+    cancelarBusquedaPacientes();
     return;
   }
+  if (secuencia !== estadoPagina.pacientesSeq) return;
 
-  const secuencia = ++estadoPagina.pacientesSeq;
   try {
-    const pacientes = await api.get(`/api/patients?q=${encodeURIComponent(q)}&limit=20`);
+    const pacientes = await api.get(
+      `/api/patients/search?q=${encodeURIComponent(q)}&limit=20`
+    );
     if (secuencia !== estadoPagina.pacientesSeq) return;
+    if ($('#cita-paciente-busqueda').value.trim() !== q) return;
     renderResultadosPacientes(pacientes);
   } catch (error) {
     if (secuencia !== estadoPagina.pacientesSeq) return;
@@ -1419,6 +1771,7 @@ async function buscarPacientes(q) {
 function abrirNueva(paciente = null, hora = '09:00', opciones = {}) {
   const formulario = $('#form-cita');
   formulario.reset();
+  cerrarMotivoOtro();
   const tipo = ['normal', 'extra', 'emergencia'].includes(opciones.tipo)
     ? opciones.tipo
     : 'normal';
@@ -1484,6 +1837,7 @@ function abrirEditar(cita) {
     nombres: cita.nombres,
     apellidos: cita.apellidos,
     cedula: cita.paciente_cedula,
+    es_menor: cita.es_menor,
   };
   seleccionarPaciente(paciente);
 
@@ -1555,13 +1909,18 @@ async function guardarCita(evento) {
           : '',
       });
       patientId = creada.id;
-      pacienteNuevo = await api.get(`/api/patients/${encodeURIComponent(patientId)}`).catch(() => ({
+      // La admisión ya tiene los datos mínimos: no se consulta la ficha
+      // completa ni para el aviso; la cita confirmará el estado LOPDP.
+      pacienteNuevo = {
         id: patientId,
         cedula,
         nombres,
         apellidos,
-        consentimiento_datos: consentimientoFecha,
-      }));
+        fecha_nacimiento: nacimiento,
+        es_menor: menor,
+        consentimientoPendienteEvidencia: true,
+      };
+      estadoPagina.pacienteSeleccionado = pacienteNuevo;
       $('#cita-paciente').value = patientId;
     }
 
@@ -1591,15 +1950,19 @@ async function guardarCita(evento) {
     $('#dlg-cita').close();
     await cargarCitas();
 
-    // Solo para pacientes nuevas: imprimir/escoger LOPDP y subir evidencia.
-    if (pacienteNuevo) {
-      abrirAccionesLopdp({
-        paciente: pacienteNuevo,
-        citaId: citaCreada?.id || null,
-        puedeVerDocumentos: puede(estadoPagina.usuario, 'documentos.ver'),
-        puedeCrearDocumentos: puede(estadoPagina.usuario, 'documentos.crear'),
-        puedeEditar: puede(estadoPagina.usuario, 'pacientes.editar'),
-      });
+    // Sin interrupción modal: el pendiente LOPDP se muestra como aviso no modal
+    // y se resuelve con la evidencia firmada, no con la marca de consentimiento.
+    // La respuesta de la cita trae el resumen mínimo y el estado de evidencia,
+    // así que no se lee la ficha completa de la paciente.
+    if (!id) {
+      const resumenCita = citaCreada?.paciente;
+      const pacienteParaAviso = resumenCita
+        ? { ...(pacienteNuevo || estadoPagina.pacienteSeleccionado || {}), ...resumenCita }
+        : pacienteNuevo || estadoPagina.pacienteSeleccionado;
+      if (pacienteParaAviso?.id) {
+        estadoPagina.pacienteSeleccionado = pacienteParaAviso;
+        mostrarAvisoLopdp(pacienteParaAviso, citaCreada?.id || null);
+      }
     }
   } catch (error) {
     setBusy(boton, false);
@@ -1625,11 +1988,23 @@ async function cancelarCita(cita) {
 
 function conectarEventos() {
   $('#btn-nueva-cita').addEventListener('click', () => abrirNueva());
+  $('#btn-motivos')?.addEventListener('click', () => abrirMotivos());
+
+  $('#form-motivo')?.addEventListener('submit', guardarMotivo);
+  $('#btn-cancelar-motivo')?.addEventListener('click', () => limpiarFormularioMotivo());
+  $('#btn-motivo-otro')?.addEventListener('click', () => abrirMotivoOtro());
+  $('#btn-motivo-otro-usar')?.addEventListener('click', () => usarMotivoOtro());
+  $('#dlg-motivos')?.addEventListener('close', () => limpiarFormularioMotivo());
+
+  $('#aviso-lopdp-previsualizar')?.addEventListener('click', () => previsualizarLopdpAviso());
+  $('#aviso-lopdp-subir')?.addEventListener('click', () => subirEvidenciaAviso());
+  $('#aviso-lopdp-cerrar')?.addEventListener('click', () => ocultarAvisoLopdp());
 
   $('#btn-paciente-nueva').addEventListener('click', () => {
+    cancelarBusquedaPacientes();
+    estadoPagina.pacienteSeleccionado = null;
     $('#cita-paciente').value = '';
     $('#cita-paciente-busqueda').value = '';
-    $('#resultados-pacientes-cita').hidden = true;
     $('#cita-paciente-seleccionado').textContent =
       'Paciente nueva: completa los datos de admisión.';
     $('#cita-nueva-paciente').hidden = false;
@@ -1662,19 +2037,13 @@ function conectarEventos() {
     panel.hidden = !panel.hidden;
     $('#btn-filtros').classList.toggle('is-active', !panel.hidden);
     $('#btn-filtros').setAttribute('aria-expanded', String(!panel.hidden));
-    if (!panel.hidden) $('#buscar').focus();
+    if (!panel.hidden) $('#filtro-estado').focus();
   });
 
   $('#btn-limpiar-filtros').addEventListener('click', () => {
-    $('#buscar').value = '';
     $('#filtro-estado').value = '';
     $('#filtro-medico').value = '';
     cargarCitas();
-  });
-
-  $('#buscar').addEventListener('input', () => {
-    clearTimeout(estadoPagina.temporizador);
-    estadoPagina.temporizador = setTimeout(cargarCitas, 260);
   });
 
   $('#filtro-estado').addEventListener('change', cargarCitas);
@@ -1768,9 +2137,11 @@ function conectarEventos() {
     estadoPagina.pacienteSeleccionado = null;
     $('#cita-paciente').value = '';
     $('#cita-paciente-seleccionado').textContent = 'Escribe al menos 2 letras para buscar.';
+    cancelarBusquedaPacientes();
     const q = $('#cita-paciente-busqueda').value.trim();
-    clearTimeout(estadoPagina.pacientesTimer);
-    estadoPagina.pacientesTimer = setTimeout(() => buscarPacientes(q), 260);
+    if (q.length < 2) return;
+    const secuencia = estadoPagina.pacientesSeq;
+    estadoPagina.pacientesTimer = setTimeout(() => buscarPacientes(q, secuencia), 260);
   });
 
   document.addEventListener('click', cerrarResultadosCita);
@@ -1785,16 +2156,16 @@ function conectarEventos() {
   });
 
   alSalir(() => {
-    clearTimeout(estadoPagina.temporizador);
     clearTimeout(estadoPagina.pacientesTimer);
     document.removeEventListener('click', cerrarResultadosCita);
   });
 }
 
 function cerrarResultadosCita(evento) {
-  if (!evento.target.closest('#cita-paciente-busqueda, #resultados-pacientes-cita')) {
-    $('#resultados-pacientes-cita').hidden = true;
-  }
+  if (evento.target.closest('#cita-paciente-busqueda, #resultados-pacientes-cita')) return;
+  // Clic fuera: invalida la búsqueda en curso (secuencia y temporizador) y
+  // vacía la lista, para que una respuesta lenta no reaparezca después.
+  cancelarBusquedaPacientes();
 }
 
 async function vistaInicialAgenda() {
@@ -1838,8 +2209,9 @@ async function init() {
 
   if (estadoPagina.pacienteParam && puede(estadoPagina.usuario, 'agenda.gestionar')) {
     try {
+      // Enlace directo desde Pacientes: solo se necesita el resumen mínimo.
       const paciente = await api.get(
-        `/api/patients/${encodeURIComponent(estadoPagina.pacienteParam)}`
+        `/api/patients/${encodeURIComponent(estadoPagina.pacienteParam)}/summary`
       );
       abrirNueva(paciente);
     } catch {

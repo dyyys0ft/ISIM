@@ -71,12 +71,39 @@ async function llenarAdmision(pagina, datos) {
   });
 }
 
-async function cerrarAccionesLopdp(pagina, { subir = false, imprimir = false } = {}) {
-  await pagina.waitForSelector('.modal #lopdp-imprimir', { timeout: 25000 });
-  assert.ok(
-    await pagina.$('.modal #lopdp-subir'),
-    'La paciente nueva debe permitir subir la evidencia LOPDP'
+async function esperarAvisoLopdp(pagina, apellido) {
+  await pagina
+    .waitForFunction(() => !document.querySelector('.modal'), { timeout: 5000 })
+    .catch(() => {});
+  await pagina.waitForSelector('#aviso-lopdp-agenda:not([hidden])', { timeout: 25000 });
+  await pagina.waitForFunction(
+    (nombre) => (document.querySelector('#aviso-lopdp-texto')?.textContent || '').includes(nombre),
+    { timeout: 15000 },
+    apellido
   );
+  const enlace = await pagina.$eval('#aviso-lopdp-ficha', (nodo) => nodo.getAttribute('href'));
+  assert.match(enlace, /paciente\.html\?id=.*tab=datos/i);
+  assert.ok(await pagina.$('#aviso-lopdp-previsualizar'));
+  assert.equal(
+    await pagina.$eval('#aviso-lopdp-agenda', (nodo) => nodo.getAttribute('role')),
+    'status',
+    'El aviso LOPDP debe ser un estado no modal'
+  );
+}
+
+async function gestionarAvisoLopdp(pagina, apellido, { subir = false, imprimir = false } = {}) {
+  await esperarAvisoLopdp(pagina, apellido);
+
+  if (imprimir) {
+    await pagina.click('#aviso-lopdp-previsualizar');
+    await pagina.waitForSelector('#consentimiento-opcion', { timeout: 15000 });
+    const opciones = await pagina.$$eval('#consentimiento-opcion option', (nodos) =>
+      nodos.map((nodo) => nodo.textContent.trim())
+    );
+    assert.ok(opciones.some((texto) => /LOPDP/i.test(texto)));
+    await pagina.click('.modal [data-cerrar-modal]');
+    await pagina.waitForFunction(() => !document.querySelector('.modal'));
+  }
 
   if (subir) {
     const archivo = resolve(
@@ -92,28 +119,14 @@ async function cerrarAccionesLopdp(pagina, { subir = false, imprimir = false } =
     );
     const [selector] = await Promise.all([
       pagina.waitForFileChooser({ timeout: 10000 }),
-      pagina.click('.modal #lopdp-subir'),
+      pagina.click('#aviso-lopdp-subir'),
     ]);
     await selector.accept([archivo]);
     await pagina.waitForFunction(
-      () =>
-        /Evidencia firmada:/i.test(document.querySelector('#lopdp-estado')?.innerText || '') &&
-        !/sin cargar/i.test(document.querySelector('#lopdp-estado')?.innerText || ''),
+      () => document.querySelector('#aviso-lopdp-agenda')?.hidden === true,
       { timeout: 25000 }
     );
   }
-
-  if (imprimir) {
-    await pagina.click('.modal #lopdp-imprimir');
-    await pagina.waitForSelector('#consentimiento-opcion', { timeout: 15000 });
-    const opciones = await pagina.$$eval('#consentimiento-opcion option', (nodos) =>
-      nodos.map((nodo) => nodo.textContent.trim())
-    );
-    assert.ok(opciones.some((texto) => /LOPDP/i.test(texto)));
-  }
-
-  await pagina.click('.modal [data-cerrar-modal]');
-  await pagina.waitForFunction(() => !document.querySelector('.modal'));
 }
 
 async function main() {
@@ -177,8 +190,8 @@ async function main() {
     { timeout: 25000 },
     adulto.apellidos
   );
-  await cerrarAccionesLopdp(pagina, { subir: true, imprimir: true });
-  console.log('✓ Cita creada con admisión inline de paciente adulta');
+  await gestionarAvisoLopdp(pagina, adulto.apellidos, { subir: true, imprimir: true });
+  console.log('✓ Cita creada sin modal LOPDP y aviso no modal con acciones');
 
   // 2. Menor sin representante: debe rechazarse.
   await abrirNuevaDesdeJornada(pagina, '10:00');
@@ -213,7 +226,7 @@ async function main() {
     { timeout: 25000 },
     menor.apellidos
   );
-  await cerrarAccionesLopdp(pagina);
+  await gestionarAvisoLopdp(pagina, menor.apellidos);
   console.log('✓ Menor registrado con representante legal y cita asignada');
 
   await pagina.screenshot({
@@ -258,11 +271,15 @@ async function main() {
   try {
     const pacienteDb = db
       .prepare(
-        `SELECT consentimiento_datos, telefono, direccion, tipo_doc
+        `SELECT consentimiento_datos, consentimiento_evidencia_path, telefono, direccion, tipo_doc
          FROM patients WHERE cedula = ?`
       )
       .get(adulto.cedula);
     assert.ok(pacienteDb.consentimiento_datos, 'Debe guardarse la autorización LOPDP');
+    assert.ok(
+      pacienteDb.consentimiento_evidencia_path,
+      'La evidencia subida desde el aviso debe quedar registrada'
+    );
     assert.equal(pacienteDb.telefono, adulto.telefono);
     assert.equal(pacienteDb.direccion, adulto.direccion);
     assert.equal(pacienteDb.tipo_doc, 'cedula');

@@ -10,6 +10,10 @@ import {
   resumirDump,
   separarNombre,
 } from '../server/lib/migracion/oldDb.js';
+import {
+  comprobarOrigenDump,
+  resolverDumpMigracion,
+} from './lib/migracion-fixture.mjs';
 
 /**
  * E2E de migración de base de datos.
@@ -497,7 +501,7 @@ async function analizarYMigrar(admin, sql) {
 
   if (corrida.resumen?.respaldo) {
     archivosLimpiar.push(
-      relative(resolve(entorno.root, 'data'), corrida.resumen.respaldo)
+      relative(entorno.dataDir || resolve(entorno.root, 'data'), corrida.resumen.respaldo)
     );
   }
   if (corrida.resumen?.usuarios?.archivoCredenciales) {
@@ -838,11 +842,22 @@ function recolectarTexto(snapshot) {
 }
 
 try {
+  const origenDump = comprobarOrigenDump(resolverDumpMigracion());
+  assert.equal(
+    origenDump.esFixture,
+    !existsSync(resolve('old_db.sql')),
+    'El fixture debe usarse solo cuando old_db.sql no existe'
+  );
+  if (origenDump.esFixture) {
+    assert.match(origenDump.ruta, /tests[\\/]fixtures[\\/]migracion[\\/]old_db_fixture\.sql$/);
+  }
   entorno = await crearEntornoE2E();
   console.log(`Servidor de prueba: ${entorno.base}`);
-  console.log('Leyendo old_db.sql y construyendo subconjunto representativo…');
+  console.log(
+    `Leyendo ${origenDump.nombre} y construyendo subconjunto representativo…`
+  );
 
-  const tablasOld = leerDump(resolve('old_db.sql'));
+  const tablasOld = leerDump(origenDump.ruta);
   const resumenCompleto = resumirDump(tablasOld);
   const subconjunto = MODO_COMPLETO
     ? {
@@ -900,8 +915,7 @@ try {
   );
 
   const archivoCredenciales = resolve(
-    entorno.root,
-    'data',
+    entorno.dataDir || resolve(entorno.root, 'data'),
     ciclo1.corrida.resumen.usuarios.archivoCredenciales
   );
   assert.ok(existsSync(archivoCredenciales), 'Debe generarse el archivo de credenciales');
@@ -1051,9 +1065,8 @@ try {
   console.log(
     JSON.stringify(
       {
-        fuente: MODO_COMPLETO
-          ? 'old_db.sql (completo)'
-          : 'old_db.sql (subconjunto representativo)',
+        fuente: `${origenDump.nombre} (${MODO_COMPLETO ? 'completo' : 'subconjunto representativo'})`,
+        origenEsFixture: origenDump.esFixture,
         ciclos: MODO_COMPLETO ? 1 : 3,
         pacientes: snapshot3.pacientes.size,
         citas: snapshot3.citas.size,

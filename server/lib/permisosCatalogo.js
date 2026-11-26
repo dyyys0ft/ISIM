@@ -11,6 +11,7 @@ export const PERMISOS = {
   DOCUMENTOS_FIRMAR: 'documentos.firmar',
   AGENDA_VER: 'agenda.ver',
   AGENDA_GESTIONAR: 'agenda.gestionar',
+  AGENDA_MOTIVOS: 'agenda.motivos',
   HISTORIAS_VER: 'historias.ver',
   HISTORIAS_RESUMEN: 'historias.resumen',
   HISTORIAS_GESTIONAR: 'historias.gestionar',
@@ -56,6 +57,11 @@ export const CATALOGO_PERMISOS = [
     permisos: [
       { permiso: PERMISOS.AGENDA_VER, etiqueta: 'Ver agenda', tipo: 'lectura' },
       { permiso: PERMISOS.AGENDA_GESTIONAR, etiqueta: 'Gestionar citas', tipo: 'edicion' },
+      {
+        permiso: PERMISOS.AGENDA_MOTIVOS,
+        etiqueta: 'Gestionar motivos de consulta',
+        tipo: 'edicion',
+      },
     ],
   },
   {
@@ -220,6 +226,7 @@ export const ROLES_POR_DEFECTO = [
       PERMISOS.PACIENTES_EDITAR,
       PERMISOS.AGENDA_VER,
       PERMISOS.AGENDA_GESTIONAR,
+      PERMISOS.AGENDA_MOTIVOS,
     ],
   },
   {
@@ -234,6 +241,7 @@ export const ROLES_POR_DEFECTO = [
       PERMISOS.PACIENTES_EDITAR,
       PERMISOS.AGENDA_VER,
       PERMISOS.AGENDA_GESTIONAR,
+      PERMISOS.AGENDA_MOTIVOS,
       PERMISOS.HISTORIAS_RESUMEN,
       PERMISOS.EXAMENES_GESTIONAR,
       PERMISOS.DOCUMENTOS_VER,

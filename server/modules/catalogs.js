@@ -85,6 +85,56 @@ function normalizarEsquema(body) {
   };
 }
 
+const MAX_GRUPO_MOTIVO = 80;
+const MAX_TEXTO_MOTIVO = 120;
+
+/** Normaliza y valida el orden de un motivo dentro de su grupo. */
+function normalizarOrdenMotivo(valor, porDefecto) {
+  if (valor === undefined || valor === null || valor === '') return porDefecto;
+  const numero = Number(valor);
+  if (!Number.isInteger(numero) || numero < 1 || numero > 999) {
+    throw new HttpError(400, 'El orden debe ser un número entero entre 1 y 999');
+  }
+  return numero;
+}
+
+function textoMotivo(valor, campo) {
+  const original = String(valor ?? '').trim();
+  const maximo = campo === 'grupo' ? MAX_GRUPO_MOTIVO : MAX_TEXTO_MOTIVO;
+  if (original.length > maximo) {
+    throw new HttpError(
+      400,
+      `${campo === 'grupo' ? 'El grupo' : 'El motivo'} no puede superar ${maximo} caracteres`
+    );
+  }
+  return original.slice(0, maximo);
+}
+
+/** Hay un duplicado activo cuando coinciden grupo y texto sin tildes ni mayúsculas. */
+function motivoDuplicado({ grupo, motivo, excluirId = null }) {
+  const fila = db
+    .prepare(
+      `SELECT id FROM motivos_cita
+       WHERE activo = 1
+         AND sin_tildes(TRIM(grupo)) = sin_tildes(TRIM(?))
+         AND sin_tildes(TRIM(motivo)) = sin_tildes(TRIM(?))
+         ${excluirId ? 'AND id != ?' : ''}
+       LIMIT 1`
+    )
+    .get(grupo, motivo, ...(excluirId ? [excluirId] : []));
+  return Boolean(fila);
+}
+
+function siguienteOrdenMotivo(grupo) {
+  return db
+    .prepare(
+      `SELECT COALESCE(MAX(orden), 0) + 1 AS orden
+       FROM motivos_cita
+       WHERE sin_tildes(TRIM(grupo)) = sin_tildes(TRIM(?))`
+    )
+    .get(grupo).orden;
+}
+
 export function routes(router) {
   router.get('/api/motivos', (ctx) => {
     const user = requireUser(ctx);
@@ -107,6 +157,111 @@ export function routes(router) {
     }
 
     return [...grupos.entries()].map(([grupo, motivos]) => ({ grupo, motivos }));
+  });
+
+  // Lectura administrativa: incluye motivos activos e inactivos.
+  router.get('/api/motivos/admin', (ctx) => {
+    const user = requireUser(ctx);
+    exigir(user, PERMISOS.AGENDA_MOTIVOS);
+
+    return db
+      .prepare(
+        `SELECT id, grupo, motivo, orden, activo, creado_en
+         FROM motivos_cita
+         ORDER BY grupo COLLATE NOCASE, activo DESC, orden ASC, motivo COLLATE NOCASE`
+      )
+      .all();
+  });
+
+  router.post('/api/motivos', (ctx) => {
+    const user = requireUser(ctx);
+    exigir(user, PERMISOS.AGENDA_MOTIVOS);
+
+    const grupo = textoMotivo(ctx.body?.grupo, 'grupo') || 'Consultas';
+    const motivo = textoMotivo(ctx.body?.motivo, 'motivo');
+    if (!motivo) throw new HttpError(400, 'El texto del motivo es obligatorio');
+    if (motivoDuplicado({ grupo, motivo })) {
+      throw new HttpError(409, 'Ya existe un motivo activo con ese texto en el grupo.');
+    }
+
+    const id = uid();
+    const orden = normalizarOrdenMotivo(ctx.body?.orden, siguienteOrdenMotivo(grupo));
+    const ahora = nowIso();
+    db.prepare(
+      `INSERT INTO motivos_cita (id, grupo, motivo, orden, activo, creado_en)
+       VALUES (?, ?, ?, ?, 1, ?)`
+    ).run(id, grupo, motivo, orden, ahora);
+
+    audit(user.id, 'agenda_motivo_creado', 'motivos_cita', id, { grupo, motivo, orden });
+    ctx.ok({ id, grupo, motivo, orden, activo: 1 }, 201);
+  });
+
+  router.patch('/api/motivos/:id', (ctx) => {
+    const user = requireUser(ctx);
+    exigir(user, PERMISOS.AGENDA_MOTIVOS);
+
+    const actual = db.prepare('SELECT * FROM motivos_cita WHERE id = ?').get(ctx.params.id);
+    if (!actual) throw new HttpError(404, 'Motivo no encontrado');
+
+    const grupo =
+      ctx.body?.grupo === undefined
+        ? actual.grupo
+        : textoMotivo(ctx.body.grupo, 'grupo') || 'Consultas';
+    const motivo =
+      ctx.body?.motivo === undefined
+        ? actual.motivo
+        : textoMotivo(ctx.body.motivo, 'motivo');
+    if (!motivo) throw new HttpError(400, 'El texto del motivo es obligatorio');
+
+    const orden =
+      ctx.body?.orden === undefined
+        ? actual.orden
+        : normalizarOrdenMotivo(ctx.body.orden, actual.orden);
+    const activo =
+      ctx.body?.activo === undefined ? actual.activo : ctx.body.activo ? 1 : 0;
+
+    if (activo === 1 && motivoDuplicado({ grupo, motivo, excluirId: actual.id })) {
+      throw new HttpError(409, 'Ya existe un motivo activo con ese texto en el grupo.');
+    }
+
+    db.prepare(
+      `UPDATE motivos_cita
+       SET grupo = ?, motivo = ?, orden = ?, activo = ?
+       WHERE id = ?`
+    ).run(grupo, motivo, orden, activo, actual.id);
+
+    const accion =
+      actual.activo === 0 && activo === 1
+        ? 'agenda_motivo_reactivado'
+        : 'agenda_motivo_editado';
+    audit(user.id, accion, 'motivos_cita', actual.id, {
+      antes: {
+        grupo: actual.grupo,
+        motivo: actual.motivo,
+        orden: actual.orden,
+        activo: actual.activo,
+      },
+      despues: { grupo, motivo, orden, activo },
+    });
+    ctx.ok({ ok: true });
+  });
+
+  // Baja lógica: las citas guardan el texto del motivo y conservan su historial.
+  router.delete('/api/motivos/:id', (ctx) => {
+    const user = requireUser(ctx);
+    exigir(user, PERMISOS.AGENDA_MOTIVOS);
+
+    const actual = db.prepare('SELECT * FROM motivos_cita WHERE id = ?').get(ctx.params.id);
+    if (!actual) throw new HttpError(404, 'Motivo no encontrado');
+
+    if (actual.activo === 1) {
+      db.prepare('UPDATE motivos_cita SET activo = 0 WHERE id = ?').run(actual.id);
+      audit(user.id, 'agenda_motivo_desactivado', 'motivos_cita', actual.id, {
+        grupo: actual.grupo,
+        motivo: actual.motivo,
+      });
+    }
+    ctx.ok({ ok: true });
   });
 
   router.get('/api/catalogs/diagnoses', (ctx) => {

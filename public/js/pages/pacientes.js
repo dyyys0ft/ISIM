@@ -3,6 +3,7 @@ import { $, $$, badge, escapeHtml, fmtFecha, initials, setBusy, toast } from '..
 import { initChrome } from '../chrome.js';
 import { puede } from '../permisos.js';
 import { htmlContactoPrivado, activarContactoPrivado } from '../privacidad.js';
+import { abrirCargaEvidencia } from '../lopdp.js';
 
 let pacientes = [];
 let temporizador = null;
@@ -12,7 +13,9 @@ let totalPaginas = 1;
 let totalPacientes = 0;
 let totalIncompletos = 0;
 let totalSinConsentimiento = 0;
+let totalSinEvidencia = 0;
 let filtroSinConsentimiento = false;
+let filtroSinEvidencia = false;
 let ordenActual = 'nombre_asc';
 const LIMITE_PAGINA = 24;
 const COLUMNAS_KEY = 'pacientes-columnas';
@@ -74,6 +77,7 @@ async function cargar(pagina = paginaActual) {
   if (apellido) params.set('apellido', apellido);
   if (cedula) params.set('cedula', cedula);
   if (filtroSinConsentimiento) params.set('sinConsentimiento', '1');
+  if (filtroSinEvidencia) params.set('sinEvidencia', '1');
 
   try {
     const resultado = await api.get(`/api/patients/paginated?${params.toString()}`);
@@ -83,6 +87,7 @@ async function cargar(pagina = paginaActual) {
     totalPacientes = resultado.total;
     totalIncompletos = resultado.incompletos;
     totalSinConsentimiento = resultado.sinConsentimiento || 0;
+    totalSinEvidencia = resultado.sinEvidencia || 0;
     render();
   } catch (error) {
     if (error.status === 401) return window.location.replace('/');
@@ -132,6 +137,28 @@ function pintarOrden() {
   }
 }
 
+function renderAlertaEvidencia() {
+  const alerta = $('#alerta-sin-evidencia');
+  if (!alerta) return;
+
+  if (!totalSinEvidencia && !filtroSinEvidencia) {
+    alerta.hidden = true;
+    return;
+  }
+
+  alerta.hidden = false;
+  const cantidad = filtroSinEvidencia ? totalPacientes : totalSinEvidencia;
+  const numero = Number(cantidad).toLocaleString('es-EC');
+  const texto = cantidad === 1 ? 'paciente' : 'pacientes';
+  $('#alerta-sin-evidencia-texto').textContent = filtroSinEvidencia
+    ? `Mostrando ${numero} ${texto} con evidencia LOPDP pendiente.`
+    : `${numero} ${texto} ${cantidad === 1 ? 'no tiene' : 'no tienen'} evidencia LOPDP cargada.`;
+
+  const boton = $('#btn-filtrar-sin-evidencia');
+  boton.textContent = filtroSinEvidencia ? 'Ver todos' : 'Ver pendientes';
+  boton.setAttribute('aria-pressed', String(filtroSinEvidencia));
+}
+
 function renderAlertaConsentimiento() {
   const alerta = $('#alerta-sin-consentimiento');
   if (!alerta) return;
@@ -156,6 +183,7 @@ function renderAlertaConsentimiento() {
 }
 
 function render() {
+  renderAlertaEvidencia();
   renderAlertaConsentimiento();
   const lista = $('#lista');
   const vacio = $('#vacio');
@@ -175,12 +203,14 @@ function render() {
 
   const puedeDesactivar = puede(usuarioActual, 'pacientes.desactivar');
   const puedeDocumentos = puede(usuarioActual, 'documentos.ver');
+  const puedeEditar = puede(usuarioActual, 'pacientes.editar');
 
   lista.innerHTML = pacientes
     .map((paciente) => {
       const edad = calcularEdad(paciente.fecha_nacimiento);
       const sexo = etiquetaSexo(paciente.sexo);
       const menor = edad != null && edad < 18;
+      const pendienteEvidencia = Boolean(paciente.consentimientoEstado?.pendienteEvidencia);
       const nombreCompleto = `${paciente.nombres} ${paciente.apellidos}`.trim();
       const detalle = [edad != null ? `${edad} años` : null, sexo || null]
         .filter(Boolean)
@@ -202,6 +232,11 @@ function render() {
 
           <div class="patient-card__badges">
             ${menor ? '<span class="badge badge--programada">Menor</span>' : ''}
+            ${
+              pendienteEvidencia
+                ? '<span class="badge badge--reagendada">Evidencia LOPDP pendiente</span>'
+                : ''
+            }
             ${
               !String(paciente.consentimiento_datos || '').trim()
                 ? '<span class="badge badge--reagendada">Sin consentimiento LOPDP</span>'
@@ -241,6 +276,11 @@ function render() {
               paciente.id
             )}">Ficha</a>
             ${
+              puedeEditar && pendienteEvidencia
+                ? '<button class="btn btn--sm btn--primary" type="button" data-action="evidencia">Subir evidencia</button>'
+                : ''
+            }
+            ${
               puede(usuarioActual, 'historias.ver')
                 ? `<a class="btn btn--sm btn--historia" href="/paciente.html?id=${encodeURIComponent(
                     paciente.id
@@ -275,6 +315,17 @@ function render() {
 
     if (boton.dataset.action === 'documentos') {
       boton.addEventListener('click', () => abrirDocumentosPaciente(paciente));
+    }
+
+    if (boton.dataset.action === 'evidencia') {
+      boton.addEventListener('click', () =>
+        abrirCargaEvidencia({
+          paciente,
+          onSubida: async () => {
+            await cargar();
+          },
+        })
+      );
     }
   }
 
@@ -451,7 +502,13 @@ function conectarEventos() {
     $('#buscar-cedula').value = '';
     ordenActual = 'nombre_asc';
     filtroSinConsentimiento = false;
+    filtroSinEvidencia = false;
     pintarOrden();
+    cargar(1);
+  });
+
+  $('#btn-filtrar-sin-evidencia').addEventListener('click', () => {
+    filtroSinEvidencia = !filtroSinEvidencia;
     cargar(1);
   });
 

@@ -1,8 +1,9 @@
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { createServer } from 'node:net';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 
 const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 
@@ -29,7 +30,14 @@ function puertoLibre(host) {
  */
 export async function crearEntornoE2E({ host = '127.0.0.1' } = {}) {
   const stamp = Date.now();
-  const dbFile = resolve(root, 'data', `e2e-${stamp}.db`);
+  // Cada prueba usa su propio DATA_DIR temporal fuera del repositorio para no
+  // escribir bases, evidencias ni respaldos en `data/`. Si la prueba ya definió
+  // DATA_DIR (pruebas de migración/archivos), se respeta y la prueba lo limpia.
+  const dataDirPropio = !process.env.DATA_DIR;
+  const dataDir = dataDirPropio
+    ? mkdtempSync(join(tmpdir(), 'isim-e2e-'))
+    : resolve(process.env.DATA_DIR);
+  const dbFile = resolve(dataDir, `e2e-${stamp}.db`);
   let port = await puertoLibre(host);
   let httpsPort = port + 1;
   let base = `http://${host}:${port}`;
@@ -42,6 +50,7 @@ export async function crearEntornoE2E({ host = '127.0.0.1' } = {}) {
       cwd: root,
       env: {
         ...process.env,
+        DATA_DIR: dataDir,
         DB_FILE: dbFile,
         HOST: host,
         PORT: String(port),
@@ -198,11 +207,14 @@ export async function crearEntornoE2E({ host = '127.0.0.1' } = {}) {
   async function limpiar(archivosExtra = []) {
     await detener();
     for (const archivo of archivosExtra) {
-      const ruta = resolve(root, 'data', archivo);
+      const ruta = resolve(dataDir, archivo);
       if (existsSync(ruta)) rmSync(ruta, { force: true });
     }
     for (const archivo of [dbFile, `${dbFile}-wal`, `${dbFile}-shm`]) {
       if (existsSync(archivo)) rmSync(archivo, { force: true });
+    }
+    if (dataDirPropio && existsSync(dataDir)) {
+      rmSync(dataDir, { recursive: true, force: true });
     }
   }
 
@@ -211,6 +223,7 @@ export async function crearEntornoE2E({ host = '127.0.0.1' } = {}) {
     base,
     root,
     dbFile,
+    dataDir,
     crearCliente,
     iniciarSesion,
     iniciar,

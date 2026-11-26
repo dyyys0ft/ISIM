@@ -8869,17 +8869,118 @@ main.pagina-entrando {
   box-shadow: var(--shadow-xs);
 }
 
-.agenda-search {
-  flex: 1 1 320px;
-  min-width: 230px;
-}
-
-.agenda-search .input {
-  width: 100%;
-}
-
 .agenda-filtros {
   grid-template-columns: minmax(180px, 0.8fr) minmax(190px, 0.9fr) auto;
+}
+
+.motivo-otro__toggle {
+  margin-top: 0.35rem;
+}
+
+.motivo-otro__panel {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.55rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.motivo-otro__panel[hidden] {
+  display: none;
+}
+
+.motivos-form {
+  padding: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+.motivos-form__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.motivos-lista {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.motivo-grupo {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.motivo-grupo__titulo {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.motivo-fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.motivo-fila--inactivo {
+  opacity: 0.72;
+}
+
+.motivo-fila__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.motivo-fila__texto strong {
+  overflow-wrap: anywhere;
+}
+
+.motivo-fila__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.motivo-fila__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+@media (max-width: 640px) {
+  .motivo-fila {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .motivo-fila__acciones {
+    width: 100%;
+  }
+
+  .motivo-fila__acciones .btn,
+  .motivos-form__acciones .btn,
+  .motivo-otro__panel .btn {
+    min-height: 44px;
+  }
 }
 
 .agenda-grupo {
@@ -10897,8 +10998,21 @@ body.isim-shell .app-header { display: none !important; }
 .alerta-lopdp .btn {
   margin-left: auto;
 }
+.alerta-lopdp__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+.alerta-lopdp__acciones .btn {
+  margin-left: 0;
+}
 @media (max-width: 700px) {
   .alerta-lopdp .btn {
+    width: 100%;
+    margin-left: 0;
+  }
+  .alerta-lopdp__acciones {
     width: 100%;
     margin-left: 0;
   }

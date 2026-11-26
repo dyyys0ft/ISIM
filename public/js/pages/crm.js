@@ -689,7 +689,7 @@ async function buscarPacientesTarea(q) {
   const resultados = $('#tarea-paciente-resultados');
   try {
     const pacientes = await api.get(
-      `/api/patients?q=${encodeURIComponent(q)}&limit=8`
+      `/api/patients/search?q=${encodeURIComponent(q)}&limit=8`
     );
     if (!pacientes.length) {
       resultados.innerHTML = '<p class="crm-paciente-resultados__vacio">Sin coincidencias.</p>';

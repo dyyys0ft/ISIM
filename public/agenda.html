@@ -68,6 +68,9 @@
             <p class="page-sub" id="agenda-fecha-hero">Programa, confirma y controla las citas médicas</p>
           </div>
           <div class="page-actions agenda-hero__actions">
+            <button class="btn btn--sm" id="btn-motivos" type="button" data-permiso="agenda.motivos" hidden>
+              Motivos de consulta
+            </button>
             <span class="agenda-controles-fecha" id="controles-fecha">
               <button class="btn btn--sm btn--ghost" id="btn-dia-anterior" type="button" aria-label="Día anterior">‹</button>
               <input class="input" id="fecha-agenda" type="date" aria-label="Fecha de la agenda" />
@@ -86,19 +89,44 @@
         </div>
       </section>
 
+      <section
+        class="alerta-lopdp alerta-lopdp--agenda"
+        id="aviso-lopdp-agenda"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        hidden
+      >
+        <span class="alerta-lopdp__icono" aria-hidden="true">⚠</span>
+        <div class="grow">
+          <strong>Evidencia LOPDP pendiente</strong>
+          <p class="small" id="aviso-lopdp-texto"></p>
+        </div>
+        <div class="alerta-lopdp__acciones">
+          <a class="btn btn--sm" id="aviso-lopdp-ficha" href="#">Abrir ficha</a>
+          <button class="btn btn--sm" id="aviso-lopdp-previsualizar" type="button">
+            Previsualizar / imprimir
+          </button>
+          <button class="btn btn--sm btn--primary" id="aviso-lopdp-subir" type="button">
+            Subir evidencia
+          </button>
+          <button
+            class="btn btn--sm btn--ghost"
+            id="aviso-lopdp-cerrar"
+            type="button"
+            aria-label="Ocultar aviso de evidencia LOPDP"
+          >
+            ✕
+          </button>
+        </div>
+      </section>
+
       <div class="toolbar agenda-toolbar">
         <span class="vista-toggle" role="group" aria-label="Vista de agenda">
           <button class="btn btn--sm" id="btn-vista-lista" type="button">Lista</button>
           <button class="btn btn--sm is-active" id="btn-vista-jornada" type="button">Jornada</button>
           <button class="btn btn--sm" id="btn-vista-calendario" type="button">Calendario</button>
         </span>
-        <label class="search agenda-search">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <circle cx="11" cy="11" r="7"></circle>
-            <path d="m20 20-3.5-3.5"></path>
-          </svg>
-          <input class="input" id="buscar" type="search" placeholder="Buscar paciente por nombre o cédula…" aria-label="Buscar citas" />
-        </label>
         <button
           class="btn btn--sm"
           id="btn-filtros"
@@ -159,7 +187,7 @@
       <div class="empty" id="vacio" hidden>
         <span class="empty__icon" aria-hidden="true">🗓️</span>
         <p><strong>No hay citas para mostrar.</strong></p>
-        <p class="small">Cambia la fecha, la búsqueda o registra una nueva cita.</p>
+        <p class="small">Cambia la fecha o registra una nueva cita.</p>
       </div>
     </main>
 
@@ -322,6 +350,40 @@
                   placeholder="Control, ecografía, colposcopia…"
                 />
                 <datalist id="motivos-cita"></datalist>
+                <button
+                  class="btn btn--sm btn--ghost motivo-otro__toggle"
+                  type="button"
+                  id="btn-motivo-otro"
+                  aria-expanded="false"
+                  aria-controls="motivo-otro-panel"
+                >
+                  Otro…
+                </button>
+                <div class="motivo-otro__panel" id="motivo-otro-panel" hidden>
+                  <div class="field">
+                    <label for="motivo-otro-texto">Motivo personalizado</label>
+                    <input
+                      class="input"
+                      id="motivo-otro-texto"
+                      maxlength="120"
+                      autocomplete="off"
+                      placeholder="Escribe el motivo"
+                    />
+                  </div>
+                  <div class="field">
+                    <label for="motivo-otro-grupo">Grupo al guardarlo</label>
+                    <select class="select" id="motivo-otro-grupo">
+                      <option value="Consultas">Consultas</option>
+                    </select>
+                  </div>
+                  <label class="consent consent--compact" id="motivo-otro-guardar-wrap" hidden>
+                    <input type="checkbox" id="motivo-otro-guardar" />
+                    <span>Guardar también en el catálogo de motivos</span>
+                  </label>
+                  <button class="btn btn--sm btn--primary" type="button" id="btn-motivo-otro-usar">
+                    Usar este motivo
+                  </button>
+                </div>
               </div>
               <div class="field">
                 <label for="cita-tipo">Tipo</label>
@@ -377,6 +439,62 @@
         <a class="btn btn--primary" id="btn-abrir-consulta" href="#" hidden>Ver consulta</a>
         <button class="btn" id="btn-editar-cita" type="button" hidden>Editar cita</button>
         <button class="btn btn--danger" id="btn-cancelar-cita" type="button" hidden>Cancelar cita</button>
+      </div>
+    </dialog>
+
+    <dialog class="dialog dialog--wide" id="dlg-motivos" aria-labelledby="motivos-titulo">
+      <div class="dialog__head">
+        <div>
+          <h2 class="dialog__title" id="motivos-titulo">Motivos de consulta</h2>
+          <p class="hint">Administra las opciones que aparecen al agendar una cita.</p>
+        </div>
+        <button class="btn btn--ghost btn--sm" type="button" data-cerrar aria-label="Cerrar">✕</button>
+      </div>
+      <div class="dialog__body stack">
+        <form id="form-motivo" class="motivos-form" aria-labelledby="motivos-form-titulo">
+          <h3 class="side-title" id="motivos-form-titulo">Agregar o editar motivo</h3>
+          <input type="hidden" id="motivo-id" />
+          <div class="cita-form-grid cita-form-grid--3">
+            <div class="field">
+              <label for="motivo-grupo">Grupo *</label>
+              <input
+                class="input"
+                id="motivo-grupo"
+                maxlength="80"
+                list="motivos-grupos"
+                placeholder="Consultas, Estudios…"
+                autofocus
+                required
+              />
+              <datalist id="motivos-grupos"></datalist>
+            </div>
+            <div class="field">
+              <label for="motivo-texto">Motivo *</label>
+              <input class="input" id="motivo-texto" maxlength="120" required />
+            </div>
+            <div class="field">
+              <label for="motivo-orden">Orden</label>
+              <input class="input" id="motivo-orden" type="number" min="1" max="999" />
+            </div>
+          </div>
+          <div class="motivos-form__acciones">
+            <button class="btn btn--primary" id="btn-guardar-motivo" type="submit">
+              Agregar motivo
+            </button>
+            <button class="btn btn--ghost" id="btn-cancelar-motivo" type="button" hidden>
+              Cancelar edición
+            </button>
+          </div>
+          <p class="hint" id="motivos-form-estado" role="status" aria-live="polite"></p>
+        </form>
+
+        <section aria-labelledby="motivos-lista-titulo">
+          <h3 class="side-title" id="motivos-lista-titulo">Catálogo</h3>
+          <div class="motivos-lista" id="motivos-lista" aria-live="polite"></div>
+        </section>
+      </div>
+      <div class="dialog__foot">
+        <button class="btn" type="button" data-cerrar>Cerrar</button>
       </div>
     </dialog>
 
